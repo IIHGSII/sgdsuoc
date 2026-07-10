@@ -15,11 +15,13 @@ datasource db {
 // ---------------------------------------------------------------------------
 
 model Usuario {
-  id            Int      @id @default(autoincrement())
-  usuario       String   @unique
-  passwordHash  String   @map("password_hash")
-  creadoEn      DateTime @default(now()) @map("creado_en")
-  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+  id             Int      @id @default(autoincrement())
+  usuario        String   @unique
+  passwordHash   String   @map("password_hash")
+  // Se incrementa al cambiar la contraseña para invalidar las sesiones activas existentes.
+  sessionVersion Int      @default(0) @map("session_version")
+  creadoEn       DateTime @default(now()) @map("creado_en")
+  actualizadoEn  DateTime @updatedAt @map("actualizado_en")
 
   @@map("usuarios")
 }
@@ -34,7 +36,7 @@ model Estado {
   orden   Int
   esFinal Boolean @default(false) @map("es_final")
 
-  expedientes           Expediente[]   @relation("EstadoActualDeExpediente")
+  expedientes            Expediente[]   @relation("EstadoActualDeExpediente")
   trazabilidadAnteriores Trazabilidad[] @relation("EstadoAnteriorDeTrazabilidad")
   trazabilidadNuevas     Trazabilidad[] @relation("EstadoNuevoDeTrazabilidad")
 
@@ -91,7 +93,7 @@ model Adjunto {
 // ---------------------------------------------------------------------------
 
 model Expediente {
-  id     Int @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   nroMesaEntrada String  @map("nro_mesa_entrada")
   nroSuoc        Int     @map("nro_suoc")
