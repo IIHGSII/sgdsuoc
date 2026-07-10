@@ -27,3 +27,8 @@ export function formatearFecha(fecha: Date): string {
 export function ahoraParaInputLocal(): string {
   return formatInTimeZone(new Date(), ZONA_HORARIA, "yyyy-MM-dd'T'HH:mm");
 }
+
+/** Valor por defecto para un <input type="date"> mostrando el día actual en Paraguay. */
+export function hoyParaInputDate(): string {
+  return formatInTimeZone(new Date(), ZONA_HORARIA, 'yyyy-MM-dd');
+}
