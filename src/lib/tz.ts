@@ -37,3 +37,11 @@ export function ahoraParaInputLocal(): string {
 export function hoyParaInputDate(): string {
   return formatInTimeZone(new Date(), ZONA_HORARIA, 'yyyy-MM-dd');
 }
+
+/** Días de calendario transcurridos desde una fecha, contados por el día en Paraguay (para el Panel). */
+export function diasDesdeIngreso(fecha: Date): number {
+  const hoy = formatInTimeZone(new Date(), ZONA_HORARIA, 'yyyy-MM-dd');
+  const dia = formatInTimeZone(fecha, ZONA_HORARIA, 'yyyy-MM-dd');
+  const msPorDia = 24 * 60 * 60 * 1000;
+  return Math.round((Date.parse(`${hoy}T00:00:00Z`) - Date.parse(`${dia}T00:00:00Z`)) / msPorDia);
+}
