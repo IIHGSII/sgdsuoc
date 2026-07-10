@@ -39,6 +39,9 @@ yarn-error.log*
 # claude code local settings
 .claude/settings.local.json
 
+# datos reales del sistema anterior (contienen información sensible, solo uso local)
+/data/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

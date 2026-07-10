@@ -17,12 +17,42 @@ alcance, modelo de datos y reglas de negocio.
 
 ```bash
 npm install
-cp .env.example .env   # completar DATABASE_URL con una base MySQL local o de pruebas
-npm run prisma:migrate # crea/actualiza las tablas según prisma/schema.prisma
+cp .env.example .env   # completar DATABASE_URL con la base MySQL de Hostinger (o una de pruebas)
 npm run dev
 ```
 
 Abrir [http://localhost:3000](http://localhost:3000).
+
+## Migraciones (sin shadow database)
+
+El usuario de MySQL de Hostinger no tiene permiso para crear bases de datos, por lo que
+`prisma migrate dev` no funciona (necesita crear una "shadow database" temporal). El flujo
+para crear una migración nueva es:
+
+```bash
+# 1. Editar prisma/schema.prisma con el cambio deseado
+
+# 2. Generar el SQL de la migración a partir del schema
+npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > /tmp/migration.sql
+# (para cambios incrementales, usar --from-migrations prisma/migrations en vez de --from-empty)
+
+# 3. Crear la carpeta de la migración y pegar el SQL generado
+mkdir prisma/migrations/$(date +%Y%m%d%H%M%S)_nombre_del_cambio
+# pegar el contenido de /tmp/migration.sql en migration.sql dentro de esa carpeta
+
+# 4. Aplicarla a la base real
+npm run prisma:migrate:deploy
+```
+
+## Datos de catálogos (seed)
+
+`prisma/seed.ts` carga Estado/TipoDocumento/Servicio desde `data/datos_sgd.json` (el export
+del sistema anterior, no versionado por contener datos reales) más un par de Destino de
+ejemplo. Es idempotente (usa upsert por nombre):
+
+```bash
+npm run db:seed
+```
 
 ## Variables de entorno
 
