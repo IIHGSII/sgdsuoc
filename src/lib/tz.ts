@@ -23,9 +23,14 @@ export function formatearFecha(fecha: Date): string {
   return formatInTimeZone(fecha, ZONA_HORARIA, 'dd/MM/yyyy');
 }
 
+/** Formatea una fecha para usar como valor de un <input type="datetime-local"> en hora de Paraguay. */
+export function fechaParaInputLocal(fecha: Date): string {
+  return formatInTimeZone(fecha, ZONA_HORARIA, "yyyy-MM-dd'T'HH:mm");
+}
+
 /** Valor por defecto para un <input type="datetime-local"> mostrando la hora actual de Paraguay. */
 export function ahoraParaInputLocal(): string {
-  return formatInTimeZone(new Date(), ZONA_HORARIA, "yyyy-MM-dd'T'HH:mm");
+  return fechaParaInputLocal(new Date());
 }
 
 /** Valor por defecto para un <input type="date"> mostrando el día actual en Paraguay. */

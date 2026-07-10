@@ -93,3 +93,35 @@ export async function crearExpediente(datos: DatosNuevoExpediente) {
 
   throw new Error('No se pudo asignar el número SUOC tras varios intentos. Volvé a intentar.');
 }
+
+export type DatosEditarExpediente = {
+  nroMesaEntrada: string;
+  nroSimese?: string | null;
+  fechaIngresoAdm: Date;
+  fechaIngresoSuoc: Date;
+  tipoDocumentoId: number;
+  servicioOrigenId: number;
+  asunto: string;
+  montoEstimado?: string | null;
+};
+
+/**
+ * Edita los datos descriptivos de un expediente. No toca nroSuoc/anioSuoc
+ * (el correlativo asignado por RN-1 no se reedita) ni estadoActualId (los
+ * cambios de estado pasan siempre por cambiarEstado, para dejar trazabilidad).
+ */
+export async function editarExpediente(id: number, datos: DatosEditarExpediente) {
+  return prisma.expediente.update({
+    where: { id },
+    data: {
+      nroMesaEntrada: datos.nroMesaEntrada,
+      nroSimese: datos.nroSimese || null,
+      fechaIngresoAdm: datos.fechaIngresoAdm,
+      fechaIngresoSuoc: datos.fechaIngresoSuoc,
+      tipoDocumentoId: datos.tipoDocumentoId,
+      servicioOrigenId: datos.servicioOrigenId,
+      asunto: datos.asunto,
+      montoEstimado: datos.montoEstimado || null,
+    },
+  });
+}

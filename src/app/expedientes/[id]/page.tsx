@@ -4,6 +4,7 @@ import { verifySession } from '@/lib/dal';
 import { prisma } from '@/lib/prisma';
 import { formatearFecha, formatearFechaHora } from '@/lib/tz';
 import { formatearMonto } from '@/lib/format';
+import { CambiarEstadoForm } from './cambiar-estado-form';
 
 export default async function DetalleExpedientePage({
   params,
@@ -27,11 +28,19 @@ export default async function DetalleExpedientePage({
     notFound();
   }
 
-  const salidas = await prisma.salida.findMany({
-    where: { expedienteId },
-    include: { destino: true },
-    orderBy: { fecha: 'asc' },
-  });
+  const [salidas, estados, trazabilidad] = await Promise.all([
+    prisma.salida.findMany({
+      where: { expedienteId },
+      include: { destino: true },
+      orderBy: { fecha: 'asc' },
+    }),
+    prisma.estado.findMany({ orderBy: { orden: 'asc' } }),
+    prisma.trazabilidad.findMany({
+      where: { expedienteId },
+      include: { estadoAnterior: true, estadoNuevo: true },
+      orderBy: { fechaCambio: 'asc' },
+    }),
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl p-6">
@@ -66,6 +75,18 @@ export default async function DetalleExpedientePage({
           <Campo etiqueta="Asunto" valor={expediente.asunto} multilinea />
         </div>
       </dl>
+
+      <div className="mt-4 flex flex-wrap items-start gap-2">
+        <Link
+          href={`/expedientes/${expediente.id}/editar`}
+          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Editar datos
+        </Link>
+        {!expediente.estadoActual.esFinal && (
+          <CambiarEstadoForm expedienteId={expediente.id} estados={estados} />
+        )}
+      </div>
 
       <div className="mt-6">
         <div className="mb-2 flex items-center justify-between">
@@ -110,9 +131,38 @@ export default async function DetalleExpedientePage({
         )}
       </div>
 
-      <p className="mt-6 text-sm text-gray-500">
-        Historial de trazabilidad y cambio de estado manual se agregan en la próxima fase.
-      </p>
+      <div className="mt-6">
+        <h2 className="mb-2 text-sm font-semibold text-gray-900">Historial de trazabilidad</h2>
+        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Fecha
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Cambio
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Observaciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {trazabilidad.map((t) => (
+                <tr key={t.id}>
+                  <td className="px-4 py-2 text-gray-700">{formatearFechaHora(t.fechaCambio)}</td>
+                  <td className="px-4 py-2 text-gray-700">
+                    {t.estadoAnterior ? `${t.estadoAnterior.nombre} → ` : 'Ingreso: '}
+                    {t.estadoNuevo.nombre}
+                  </td>
+                  <td className="px-4 py-2 text-gray-500">{t.observaciones ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
