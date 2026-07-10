@@ -1,7 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Esquema de datos del SGD SUOC.
+// Ver docs/master-prompt-sgd-v2.md para el detalle de reglas de negocio.
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +8,183 @@ generator client {
 
 datasource db {
   provider = "mysql"
+}
+
+// ---------------------------------------------------------------------------
+// Usuario único del sistema
+// ---------------------------------------------------------------------------
+
+model Usuario {
+  id            Int      @id @default(autoincrement())
+  usuario       String   @unique
+  passwordHash  String   @map("password_hash")
+  creadoEn      DateTime @default(now()) @map("creado_en")
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  @@map("usuarios")
+}
+
+// ---------------------------------------------------------------------------
+// Catálogos (editables desde Administración, nunca se borran físicamente)
+// ---------------------------------------------------------------------------
+
+model Estado {
+  id      Int     @id @default(autoincrement())
+  nombre  String  @unique
+  orden   Int
+  esFinal Boolean @default(false) @map("es_final")
+
+  expedientes           Expediente[]   @relation("EstadoActualDeExpediente")
+  trazabilidadAnteriores Trazabilidad[] @relation("EstadoAnteriorDeTrazabilidad")
+  trazabilidadNuevas     Trazabilidad[] @relation("EstadoNuevoDeTrazabilidad")
+
+  @@map("estados")
+}
+
+model TipoDocumento {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  expedientes Expediente[]
+
+  @@map("tipos_documento")
+}
+
+model Servicio {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  expedientes Expediente[]
+
+  @@map("servicios")
+}
+
+model Destino {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  salidas Salida[]
+
+  @@map("destinos")
+}
+
+// ---------------------------------------------------------------------------
+// Adjuntos (PDF guardados como BLOB en MySQL; los usan Expediente y Salida)
+// ---------------------------------------------------------------------------
+
+model Adjunto {
+  id            Int      @id @default(autoincrement())
+  nombreArchivo String   @map("nombre_archivo")
+  mimeType      String   @map("mime_type")
+  tamanioBytes  Int      @map("tamanio_bytes")
+  contenido     Bytes    @db.LongBlob
+  creadoEn      DateTime @default(now()) @map("creado_en")
+
+  expediente Expediente?
+  salida     Salida?
+
+  @@map("adjuntos")
+}
+
+// ---------------------------------------------------------------------------
+// Expediente: documento entrante, núcleo del sistema
+// ---------------------------------------------------------------------------
+
+model Expediente {
+  id     Int @id @default(autoincrement())
+
+  nroMesaEntrada String  @map("nro_mesa_entrada")
+  nroSuoc        Int     @map("nro_suoc")
+  anioSuoc       Int     @map("anio_suoc")
+  nroSimese      String? @map("nro_simese")
+
+  fechaIngresoAdm  DateTime @map("fecha_ingreso_adm")
+  fechaIngresoSuoc DateTime @map("fecha_ingreso_suoc")
+
+  tipoDocumentoId  Int @map("tipo_documento_id")
+  servicioOrigenId Int @map("servicio_origen_id")
+
+  asunto        String   @db.Text
+  montoEstimado Decimal? @map("monto_estimado") @db.Decimal(15, 2)
+
+  estadoActualId           Int      @map("estado_actual_id")
+  fechaUltimaActualizacion DateTime @updatedAt @map("fecha_ultima_actualizacion")
+
+  adjuntoId Int? @unique @map("adjunto_id")
+
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  tipoDocumento  TipoDocumento @relation(fields: [tipoDocumentoId], references: [id], onDelete: Restrict)
+  servicioOrigen Servicio      @relation(fields: [servicioOrigenId], references: [id], onDelete: Restrict)
+  estadoActual   Estado        @relation("EstadoActualDeExpediente", fields: [estadoActualId], references: [id], onDelete: Restrict)
+  adjunto        Adjunto?      @relation(fields: [adjuntoId], references: [id], onDelete: SetNull)
+
+  salidas      Salida[]
+  trazabilidad Trazabilidad[]
+
+  @@unique([nroSuoc, anioSuoc])
+  @@index([nroMesaEntrada])
+  @@index([nroSimese])
+  @@map("expedientes")
+}
+
+// ---------------------------------------------------------------------------
+// Salida: gestión realizada sobre un expediente (0..N por expediente)
+// ---------------------------------------------------------------------------
+
+enum TipoSalida {
+  NOTA
+  PORTAL
+  OTRO
+}
+
+model Salida {
+  id           Int        @id @default(autoincrement())
+  expedienteId Int        @map("expediente_id")
+  tipo         TipoSalida
+  fecha        DateTime
+
+  // Solo aplica si tipo = NOTA
+  destinoId  Int?    @map("destino_id")
+  nroNota    String? @map("nro_nota")
+  firmadaPor String? @map("firmada_por")
+
+  // Solo aplica si tipo = PORTAL
+  referencia String?
+
+  descripcion String @db.Text
+
+  adjuntoId Int? @unique @map("adjunto_id")
+
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  expediente Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  destino    Destino?   @relation(fields: [destinoId], references: [id], onDelete: Restrict)
+  adjunto    Adjunto?   @relation(fields: [adjuntoId], references: [id], onDelete: SetNull)
+
+  @@index([expedienteId])
+  @@map("salidas")
+}
+
+// ---------------------------------------------------------------------------
+// Trazabilidad: historial de cambios de estado de un expediente
+// ---------------------------------------------------------------------------
+
+model Trazabilidad {
+  id           Int @id @default(autoincrement())
+  expedienteId Int @map("expediente_id")
+
+  // Null en el registro de ingreso inicial (todavía no hay estado "anterior").
+  estadoAnteriorId Int? @map("estado_anterior_id")
+  estadoNuevoId    Int  @map("estado_nuevo_id")
+
+  fechaCambio   DateTime @default(now()) @map("fecha_cambio")
+  observaciones String?  @db.Text
+
+  expediente     Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  estadoAnterior Estado?    @relation("EstadoAnteriorDeTrazabilidad", fields: [estadoAnteriorId], references: [id], onDelete: Restrict)
+  estadoNuevo    Estado     @relation("EstadoNuevoDeTrazabilidad", fields: [estadoNuevoId], references: [id], onDelete: Restrict)
+
+  @@index([expedienteId])
+  @@map("trazabilidad")
 }
