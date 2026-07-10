@@ -16,6 +16,9 @@ export default async function Home() {
           <Link href="/expedientes/nuevo" className="text-blue-600 hover:underline">
             Nuevo expediente
           </Link>
+          <Link href="/administracion" className="text-blue-600 hover:underline">
+            Administración
+          </Link>
         </nav>
         <div className="flex items-center gap-4 text-sm text-gray-600">
           <span>{usuario}</span>

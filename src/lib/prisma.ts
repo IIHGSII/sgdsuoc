@@ -6,7 +6,10 @@ declare global {
 }
 
 function createPrismaClient() {
-  const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
+  // useTextProtocol evita un bug del driver con columnas utf8mb4_unicode_ci:
+  // sin esto, cualquier filtro "contains" (LIKE) falla con
+  // "Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_bin,NONE)".
+  const adapter = new PrismaMariaDb(process.env.DATABASE_URL!, { useTextProtocol: true });
   return new PrismaClient({ adapter });
 }
 
