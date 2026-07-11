@@ -26,8 +26,9 @@ Abrir [http://localhost:3000](http://localhost:3000).
 ## Migraciones (sin shadow database)
 
 El usuario de MySQL de Hostinger no tiene permiso para crear bases de datos, por lo que
-`prisma migrate dev` no funciona (necesita crear una "shadow database" temporal). El flujo
-para crear una migración nueva es:
+`prisma migrate dev` no funciona (necesita crear una "shadow database" temporal). Además,
+`npm run build` corre `prisma migrate deploy` automáticamente antes de compilar (así se
+aplican solas en cada deploy, sin necesitar SSH). El flujo para crear una migración nueva es:
 
 ```bash
 # 1. Editar prisma/schema.prisma con el cambio deseado
@@ -84,7 +85,25 @@ Ver `.env.example`. Se documentan ahí a medida que se van necesitando (login, s
 
 ## Deploy en Hostinger
 
-_(Se documenta paso a paso en la fase de deploy del proyecto.)_
+1. En hPanel, conectar este repositorio de GitHub (`IIHGSII/sgdsuoc`, rama `main`) a la función
+   **"Deploy Web App"** del plan Cloud Startup.
+2. Configurar las variables de entorno de producción (mismas claves que `.env.example`):
+   `DATABASE_URL`, `SESSION_SECRET`, `TZ`.
+3. Comando de build: `npm run build` (ya incluye `prisma migrate deploy`). Comando de inicio:
+   `npm start`.
+4. Cada deploy aplica automáticamente las migraciones pendientes — no hace falta SSH.
+5. El seed de catálogos y la importación de datos del sistema anterior (`npm run db:seed`,
+   `npm run import`) se corren una sola vez desde una máquina local con acceso a
+   `data/datos_sgd.json`, apuntando `DATABASE_URL` a la base de producción (así se hizo
+   durante el desarrollo).
+
+## Restaurar un respaldo
+
+El botón de respaldo en Administración descarga un JSON con catálogos, expedientes, salidas,
+trazabilidad y adjuntos (sin usuarios). No hay una pantalla de restauración automática; para
+restaurar, cargar los datos manualmente contra la base (por ejemplo con un script chico que
+lea el JSON y haga upsert por los mismos campos que usa `scripts/import-datos.ts`), o pedir
+soporte para restaurarlo si es necesario.
 
 ## Estado del proyecto
 
