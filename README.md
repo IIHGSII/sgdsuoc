@@ -54,6 +54,30 @@ ejemplo. Es idempotente (usa upsert por nombre):
 npm run db:seed
 ```
 
+## Importación de datos del sistema anterior
+
+`scripts/import-datos.ts` lee `data/datos_sgd.json` (mismo archivo que el seed) e importa
+`contrataciones.documento` -> Expediente y `contrataciones.trazabilidad`, ignorando el resto
+de los modelos del export (procesos licitatorios, contratos, etc.). Requiere que los catálogos
+ya existan (correr `npm run db:seed` primero). Es idempotente:
+
+```bash
+npm run import
+```
+
+## Tests
+
+Los tests (Vitest) corren contra la misma base real de Hostinger — no hay una base de datos
+de test separada. Usan catálogos con nombres `TEST_...` y años lejanos (2077+) para no
+mezclarse con datos reales, y limpian todo lo que crean en `afterAll`:
+
+```bash
+npm run test
+```
+
+Cubren RN-1 (numeración automática, reinicio anual, concurrencia), RN-2 (transaccionalidad,
+bloqueo en estado final) y el importador (con un fixture chico en formato dumpdata).
+
 ## Variables de entorno
 
 Ver `.env.example`. Se documentan ahí a medida que se van necesitando (login, sesión, etc.).
