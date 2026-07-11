@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { verifySession } from '@/lib/dal';
 import { crearSalida } from '@/lib/salidas';
+import { crearAdjuntoDesdeArchivo, ArchivoInvalidoError } from '@/lib/adjuntos';
 import { localAUtc } from '@/lib/tz';
 
 const RegistrarSalidaSchema = z.object({
@@ -109,7 +110,11 @@ export async function registrarSalidaAction(
     }
   }
 
+  const archivo = formData.get('adjunto');
+
   try {
+    const adjuntoId = await crearAdjuntoDesdeArchivo(archivo instanceof File ? archivo : null);
+
     await crearSalida({
       expedienteId,
       tipo: datos.tipo,
@@ -119,11 +124,15 @@ export async function registrarSalidaAction(
       firmadaPor: datos.tipo === 'NOTA' ? datos.firmadaPor : null,
       referencia: datos.tipo === 'PORTAL' ? datos.referencia : null,
       descripcion: datos.descripcion,
+      adjuntoId,
       cambiarEstado: estadoNuevoId
         ? { estadoNuevoId, observaciones: datos.observacionesEstado || null }
         : null,
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof ArchivoInvalidoError) {
+      return conError(error.message);
+    }
     return conError(
       'No se pudo registrar la salida. El expediente puede estar en un estado final o los datos no son válidos.',
     );

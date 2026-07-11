@@ -12,6 +12,7 @@ export function EditarExpedienteForm({
   tiposDocumento,
   servicios,
   valoresIniciales,
+  adjuntoActual,
 }: {
   expedienteId: number;
   tiposDocumento: Opcion[];
@@ -26,6 +27,7 @@ export function EditarExpedienteForm({
     asunto: string;
     montoEstimado: string;
   };
+  adjuntoActual: { id: number; nombre: string } | null;
 }) {
   const [state, formAction, pending] = useActionState(editarExpedienteAction, undefined);
   const v = state?.valores;
@@ -120,6 +122,37 @@ export function EditarExpedienteForm({
         step="0.01"
         defaultValue={v?.montoEstimado ?? valoresIniciales.montoEstimado}
       />
+
+      <div>
+        <label htmlFor="adjunto" className="mb-1 block text-sm font-medium text-gray-700">
+          Adjunto (PDF)
+        </label>
+        {adjuntoActual && (
+          <p className="mb-1 text-sm text-gray-600">
+            Actual:{' '}
+            <a
+              href={`/adjuntos/${adjuntoActual.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              {adjuntoActual.nombre}
+            </a>
+          </p>
+        )}
+        <input
+          id="adjunto"
+          name="adjunto"
+          type="file"
+          accept="application/pdf"
+          className="w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-50"
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          {adjuntoActual
+            ? 'Subir un archivo nuevo reemplaza al actual.'
+            : 'Opcional: subir el expediente escaneado.'}
+        </p>
+      </div>
 
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
 

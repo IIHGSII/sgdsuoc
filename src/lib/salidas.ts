@@ -12,6 +12,7 @@ export type DatosNuevaSalida = {
   firmadaPor?: string | null;
   referencia?: string | null;
   descripcion: string;
+  adjuntoId?: number | null;
   /** RN-3: registrar la salida no cambia el estado por sí solo, pero se puede ofrecer hacerlo en el mismo paso. */
   cambiarEstado?: { estadoNuevoId: number; observaciones?: string | null } | null;
 };
@@ -28,6 +29,7 @@ export async function crearSalida(datos: DatosNuevaSalida) {
         firmadaPor: datos.firmadaPor ?? null,
         referencia: datos.referencia ?? null,
         descripcion: datos.descripcion,
+        adjuntoId: datos.adjuntoId ?? null,
       },
     });
 

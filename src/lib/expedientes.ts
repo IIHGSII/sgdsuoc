@@ -15,6 +15,7 @@ export type DatosNuevoExpediente = {
   servicioOrigenId: number;
   asunto: string;
   montoEstimado?: string | null;
+  adjuntoId?: number | null;
 };
 
 export class NumeroSuocDuplicadoError extends Error {}
@@ -56,6 +57,7 @@ export async function crearExpediente(datos: DatosNuevoExpediente) {
             asunto: datos.asunto,
             montoEstimado: datos.montoEstimado || null,
             estadoActualId: estadoInicial.id,
+            adjuntoId: datos.adjuntoId ?? null,
           },
         });
 
@@ -103,6 +105,8 @@ export type DatosEditarExpediente = {
   servicioOrigenId: number;
   asunto: string;
   montoEstimado?: string | null;
+  /** Solo si se subió un archivo nuevo: reemplaza (y borra) el adjunto anterior. */
+  nuevoAdjuntoId?: number | null;
 };
 
 /**
@@ -111,17 +115,31 @@ export type DatosEditarExpediente = {
  * cambios de estado pasan siempre por cambiarEstado, para dejar trazabilidad).
  */
 export async function editarExpediente(id: number, datos: DatosEditarExpediente) {
-  return prisma.expediente.update({
+  const datosComunes = {
+    nroMesaEntrada: datos.nroMesaEntrada,
+    nroSimese: datos.nroSimese || null,
+    fechaIngresoAdm: datos.fechaIngresoAdm,
+    fechaIngresoSuoc: datos.fechaIngresoSuoc,
+    tipoDocumentoId: datos.tipoDocumentoId,
+    servicioOrigenId: datos.servicioOrigenId,
+    asunto: datos.asunto,
+    montoEstimado: datos.montoEstimado || null,
+  };
+
+  if (datos.nuevoAdjuntoId == null) {
+    return prisma.expediente.update({ where: { id }, data: datosComunes });
+  }
+
+  const anterior = await prisma.expediente.findUnique({
     where: { id },
-    data: {
-      nroMesaEntrada: datos.nroMesaEntrada,
-      nroSimese: datos.nroSimese || null,
-      fechaIngresoAdm: datos.fechaIngresoAdm,
-      fechaIngresoSuoc: datos.fechaIngresoSuoc,
-      tipoDocumentoId: datos.tipoDocumentoId,
-      servicioOrigenId: datos.servicioOrigenId,
-      asunto: datos.asunto,
-      montoEstimado: datos.montoEstimado || null,
-    },
+    select: { adjuntoId: true },
   });
+  const expediente = await prisma.expediente.update({
+    where: { id },
+    data: { ...datosComunes, adjuntoId: datos.nuevoAdjuntoId },
+  });
+  if (anterior?.adjuntoId) {
+    await prisma.adjunto.delete({ where: { id: anterior.adjuntoId } }).catch(() => {});
+  }
+  return expediente;
 }

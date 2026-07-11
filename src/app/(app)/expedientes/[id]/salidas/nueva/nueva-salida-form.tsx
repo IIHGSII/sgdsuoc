@@ -206,6 +206,19 @@ export function NuevaSalidaForm({
         </div>
       )}
 
+      <div>
+        <label htmlFor="adjunto" className="mb-1 block text-sm font-medium text-gray-700">
+          Adjunto (PDF, opcional)
+        </label>
+        <input
+          id="adjunto"
+          name="adjunto"
+          type="file"
+          accept="application/pdf"
+          className="w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-50"
+        />
+      </div>
+
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
 
       <button

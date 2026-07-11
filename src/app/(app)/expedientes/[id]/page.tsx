@@ -21,7 +21,7 @@ export default async function DetalleExpedientePage({
 
   const expediente = await prisma.expediente.findUnique({
     where: { id: expedienteId },
-    include: { tipoDocumento: true, servicioOrigen: true, estadoActual: true },
+    include: { tipoDocumento: true, servicioOrigen: true, estadoActual: true, adjunto: true },
   });
 
   if (!expediente) {
@@ -31,7 +31,7 @@ export default async function DetalleExpedientePage({
   const [salidas, estados, trazabilidad] = await Promise.all([
     prisma.salida.findMany({
       where: { expedienteId },
-      include: { destino: true },
+      include: { destino: true, adjunto: true },
       orderBy: { fecha: 'asc' },
     }),
     prisma.estado.findMany({ orderBy: { orden: 'asc' } }),
@@ -73,6 +73,23 @@ export default async function DetalleExpedientePage({
         />
         <div className="col-span-2">
           <Campo etiqueta="Asunto" valor={expediente.asunto} multilinea />
+        </div>
+        <div className="col-span-2">
+          <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">Adjunto</dt>
+          <dd className="mt-1">
+            {expediente.adjunto ? (
+              <a
+                href={`/adjuntos/${expediente.adjunto.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {expediente.adjunto.nombreArchivo}
+              </a>
+            ) : (
+              <span className="text-gray-500">—</span>
+            )}
+          </dd>
         </div>
       </dl>
 
@@ -125,6 +142,16 @@ export default async function DetalleExpedientePage({
                   <p className="text-gray-700">Referencia: {salida.referencia}</p>
                 )}
                 <p className="mt-1 whitespace-pre-wrap text-gray-700">{salida.descripcion}</p>
+                {salida.adjunto && (
+                  <a
+                    href={`/adjuntos/${salida.adjunto.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-block text-blue-600 hover:underline"
+                  >
+                    {salida.adjunto.nombreArchivo}
+                  </a>
+                )}
               </li>
             ))}
           </ul>
