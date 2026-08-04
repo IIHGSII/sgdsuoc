@@ -11,12 +11,14 @@ export function EditarExpedienteForm({
   expedienteId,
   tiposDocumento,
   servicios,
+  viasResolucion,
   valoresIniciales,
   adjuntoActual,
 }: {
   expedienteId: number;
   tiposDocumento: Opcion[];
   servicios: Opcion[];
+  viasResolucion: Opcion[];
   valoresIniciales: {
     nroMesaEntrada: string;
     nroSimese: string;
@@ -26,6 +28,7 @@ export function EditarExpedienteForm({
     servicioOrigenId: number;
     asunto: string;
     montoEstimado: string;
+    viaResolucionId?: number;
   };
   adjuntoActual: { id: number; nombre: string } | null;
 }) {
@@ -121,6 +124,15 @@ export function EditarExpedienteForm({
         type="number"
         step="0.01"
         defaultValue={v?.montoEstimado ?? valoresIniciales.montoEstimado}
+      />
+
+      <ComboboxSelect
+        name="viaResolucionId"
+        label="Vía de resolución prevista (opcional)"
+        opciones={viasResolucion}
+        defaultValue={
+          v?.viaResolucionId ? Number(v.viaResolucionId) : valoresIniciales.viaResolucionId
+        }
       />
 
       <div>

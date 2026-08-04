@@ -13,11 +13,12 @@ export default async function ListadoExpedientesPage({
     estado?: string;
     tipo?: string;
     servicio?: string;
+    viaResolucion?: string;
     q?: string;
   }>;
 }) {
   await verifySession();
-  const { anio, estado, tipo, servicio, q } = await searchParams;
+  const { anio, estado, tipo, servicio, viaResolucion, q } = await searchParams;
 
   const filtroTexto = q ? construirFiltroTexto(q) : null;
 
@@ -26,24 +27,27 @@ export default async function ListadoExpedientesPage({
     ...(estado ? { estadoActualId: Number(estado) } : {}),
     ...(tipo ? { tipoDocumentoId: Number(tipo) } : {}),
     ...(servicio ? { servicioOrigenId: Number(servicio) } : {}),
+    ...(viaResolucion ? { viaResolucionId: Number(viaResolucion) } : {}),
     ...(filtroTexto ?? {}),
   };
 
-  const [expedientes, anios, estados, tiposDocumento, servicios] = await Promise.all([
-    prisma.expediente.findMany({
-      where,
-      orderBy: { fechaIngresoSuoc: 'desc' },
-      include: { tipoDocumento: true, servicioOrigen: true, estadoActual: true },
-    }),
-    prisma.expediente.findMany({
-      distinct: ['anioSuoc'],
-      select: { anioSuoc: true },
-      orderBy: { anioSuoc: 'desc' },
-    }),
-    prisma.estado.findMany({ orderBy: { orden: 'asc' } }),
-    prisma.tipoDocumento.findMany({ orderBy: { nombre: 'asc' } }),
-    prisma.servicio.findMany({ orderBy: { nombre: 'asc' } }),
-  ]);
+  const [expedientes, anios, estados, tiposDocumento, servicios, viasResolucion] =
+    await Promise.all([
+      prisma.expediente.findMany({
+        where,
+        orderBy: { fechaIngresoSuoc: 'desc' },
+        include: { tipoDocumento: true, servicioOrigen: true, estadoActual: true },
+      }),
+      prisma.expediente.findMany({
+        distinct: ['anioSuoc'],
+        select: { anioSuoc: true },
+        orderBy: { anioSuoc: 'desc' },
+      }),
+      prisma.estado.findMany({ orderBy: { orden: 'asc' } }),
+      prisma.tipoDocumento.findMany({ orderBy: { nombre: 'asc' } }),
+      prisma.servicio.findMany({ orderBy: { nombre: 'asc' } }),
+      prisma.viaResolucion.findMany({ orderBy: { nombre: 'asc' } }),
+    ]);
 
   return (
     <div className="mx-auto max-w-5xl p-6">
@@ -119,6 +123,20 @@ export default async function ListadoExpedientesPage({
             {servicios.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.nombre}
+              </option>
+            ))}
+          </select>
+        </Campo>
+        <Campo label="Vía de resolución">
+          <select
+            name="viaResolucion"
+            defaultValue={viaResolucion ?? ''}
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">Todas</option>
+            {viasResolucion.map((vr) => (
+              <option key={vr.id} value={vr.id}>
+                {vr.nombre}
               </option>
             ))}
           </select>

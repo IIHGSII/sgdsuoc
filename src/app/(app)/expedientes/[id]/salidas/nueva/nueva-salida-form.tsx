@@ -14,6 +14,7 @@ export function NuevaSalidaForm({
   firmantesSugeridos,
   fechaHoyLocal,
   puedeCambiarEstado,
+  sugerencia,
 }: {
   expedienteId: number;
   destinos: Opcion[];
@@ -21,10 +22,15 @@ export function NuevaSalidaForm({
   firmantesSugeridos: string[];
   fechaHoyLocal: string;
   puedeCambiarEstado: boolean;
+  sugerencia: {
+    nombre: string;
+    tipoSalidaSugerido: 'NOTA' | 'PORTAL' | 'OTRO' | null;
+    destinoSugeridoId: number | null;
+  } | null;
 }) {
   const [state, formAction, pending] = useActionState(registrarSalidaAction, undefined);
   const v = state?.valores;
-  const [tipo, setTipo] = useState(v?.tipo || 'NOTA');
+  const [tipo, setTipo] = useState(v?.tipo || sugerencia?.tipoSalidaSugerido || 'NOTA');
   const [cambiarEstado, setCambiarEstado] = useState(v?.cambiarEstado === 'on');
 
   return (
@@ -63,6 +69,13 @@ export function NuevaSalidaForm({
         </div>
       </div>
 
+      {sugerencia && (
+        <p className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+          Sugerido por la vía de resolución prevista (&quot;{sugerencia.nombre}&quot;). Podés
+          cambiarlo si no corresponde.
+        </p>
+      )}
+
       <div>
         <label htmlFor="fecha" className="mb-1 block text-sm font-medium text-gray-700">
           Fecha
@@ -83,7 +96,9 @@ export function NuevaSalidaForm({
             name="destinoId"
             label="Destino"
             opciones={destinos}
-            defaultValue={v?.destinoId ? Number(v.destinoId) : undefined}
+            defaultValue={
+              v?.destinoId ? Number(v.destinoId) : (sugerencia?.destinoSugeridoId ?? undefined)
+            }
             required
           />
           <div>

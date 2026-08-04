@@ -16,6 +16,7 @@ export type DatosNuevoExpediente = {
   asunto: string;
   montoEstimado?: string | null;
   adjuntoId?: number | null;
+  viaResolucionId?: number | null;
 };
 
 export class NumeroSuocDuplicadoError extends Error {}
@@ -58,6 +59,7 @@ export async function crearExpediente(datos: DatosNuevoExpediente) {
             montoEstimado: datos.montoEstimado || null,
             estadoActualId: estadoInicial.id,
             adjuntoId: datos.adjuntoId ?? null,
+            viaResolucionId: datos.viaResolucionId ?? null,
           },
         });
 
@@ -105,6 +107,7 @@ export type DatosEditarExpediente = {
   servicioOrigenId: number;
   asunto: string;
   montoEstimado?: string | null;
+  viaResolucionId?: number | null;
   /** Solo si se subió un archivo nuevo: reemplaza (y borra) el adjunto anterior. */
   nuevoAdjuntoId?: number | null;
 };
@@ -124,6 +127,7 @@ export async function editarExpediente(id: number, datos: DatosEditarExpediente)
     servicioOrigenId: datos.servicioOrigenId,
     asunto: datos.asunto,
     montoEstimado: datos.montoEstimado || null,
+    viaResolucionId: datos.viaResolucionId ?? null,
   };
 
   if (datos.nuevoAdjuntoId == null) {

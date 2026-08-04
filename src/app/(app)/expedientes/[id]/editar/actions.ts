@@ -17,6 +17,7 @@ const EditarExpedienteSchema = z.object({
   servicioOrigenId: z.string().min(1, 'Seleccioná el servicio de origen.'),
   asunto: z.string().trim().min(1, 'Ingresá el asunto.'),
   montoEstimado: z.string().trim(),
+  viaResolucionId: z.string().trim(),
 });
 
 export type ValoresEditarExpediente = {
@@ -28,6 +29,7 @@ export type ValoresEditarExpediente = {
   servicioOrigenId: string;
   asunto: string;
   montoEstimado: string;
+  viaResolucionId: string;
 };
 
 export type EditarExpedienteState =
@@ -49,6 +51,7 @@ export async function editarExpedienteAction(
     servicioOrigenId: String(formData.get('servicioOrigenId') ?? ''),
     asunto: String(formData.get('asunto') ?? ''),
     montoEstimado: String(formData.get('montoEstimado') ?? ''),
+    viaResolucionId: String(formData.get('viaResolucionId') ?? ''),
   };
 
   function conError(mensaje: string): EditarExpedienteState {
@@ -64,6 +67,7 @@ export async function editarExpedienteAction(
         servicioOrigenId: crudo.servicioOrigenId,
         asunto: crudo.asunto,
         montoEstimado: crudo.montoEstimado,
+        viaResolucionId: crudo.viaResolucionId,
       },
     };
   }
@@ -103,6 +107,14 @@ export async function editarExpedienteAction(
     montoEstimado = monto.toFixed(2);
   }
 
+  let viaResolucionId: number | null = null;
+  if (datos.viaResolucionId) {
+    viaResolucionId = Number(datos.viaResolucionId);
+    if (!Number.isInteger(viaResolucionId) || viaResolucionId <= 0) {
+      return conError('Seleccioná la vía de resolución de la lista, o dejala en blanco.');
+    }
+  }
+
   const archivo = formData.get('adjunto');
   let nuevoAdjuntoId: number | null;
   try {
@@ -123,6 +135,7 @@ export async function editarExpedienteAction(
     servicioOrigenId,
     asunto: datos.asunto,
     montoEstimado,
+    viaResolucionId,
     nuevoAdjuntoId,
   });
 

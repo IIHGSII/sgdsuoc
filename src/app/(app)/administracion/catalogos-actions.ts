@@ -183,3 +183,81 @@ export async function eliminarEstadoAction(formData: FormData) {
 
   volver();
 }
+
+// --- Vía de resolución: nombre + tipo de salida y destino sugeridos (opcionales) ---
+
+function leerTipoSalidaSugerido(formData: FormData): 'NOTA' | 'PORTAL' | 'OTRO' | null {
+  const valor = String(formData.get('tipoSalidaSugerido') ?? '');
+  return valor === 'NOTA' || valor === 'PORTAL' || valor === 'OTRO' ? valor : null;
+}
+
+function leerDestinoSugeridoId(formData: FormData): number | null {
+  const valor = String(formData.get('destinoSugeridoId') ?? '');
+  const id = Number(valor);
+  return valor && Number.isInteger(id) && id > 0 ? id : null;
+}
+
+export async function crearViaResolucionAction(formData: FormData) {
+  await verifySession();
+
+  const nombre = String(formData.get('nombre') ?? '').trim();
+  if (!nombre) volver('Ingresá un nombre.');
+
+  try {
+    await prisma.viaResolucion.create({
+      data: {
+        nombre,
+        tipoSalidaSugerido: leerTipoSalidaSugerido(formData),
+        destinoSugeridoId: leerDestinoSugeridoId(formData),
+      },
+    });
+  } catch (error) {
+    if (esErrorRestriccionUnica(error)) volver('Ya existe una vía de resolución con ese nombre.');
+    throw error;
+  }
+
+  volver();
+}
+
+export async function editarViaResolucionAction(formData: FormData) {
+  await verifySession();
+
+  const id = Number(formData.get('id'));
+  const nombre = String(formData.get('nombre') ?? '').trim();
+  if (!Number.isInteger(id)) volver('Datos inválidos.');
+  if (!nombre) volver('Ingresá un nombre.');
+
+  try {
+    await prisma.viaResolucion.update({
+      where: { id },
+      data: {
+        nombre,
+        tipoSalidaSugerido: leerTipoSalidaSugerido(formData),
+        destinoSugeridoId: leerDestinoSugeridoId(formData),
+      },
+    });
+  } catch (error) {
+    if (esErrorRestriccionUnica(error)) volver('Ya existe una vía de resolución con ese nombre.');
+    throw error;
+  }
+
+  volver();
+}
+
+export async function eliminarViaResolucionAction(formData: FormData) {
+  await verifySession();
+
+  const id = Number(formData.get('id'));
+  if (!Number.isInteger(id)) volver('Datos inválidos.');
+
+  try {
+    await prisma.viaResolucion.delete({ where: { id } });
+  } catch (error) {
+    if (esErrorClaveForanea(error)) {
+      volver('No se puede eliminar: hay expedientes que usan esta vía de resolución.');
+    }
+    throw error;
+  }
+
+  volver();
+}

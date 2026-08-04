@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { formatearFecha, formatearFechaHora } from '@/lib/tz';
 import { formatearMonto } from '@/lib/format';
 import { CambiarEstadoForm } from './cambiar-estado-form';
+import { CopiarResumenBoton } from './copiar-resumen-boton';
 
 export default async function DetalleExpedientePage({
   params,
@@ -21,7 +22,13 @@ export default async function DetalleExpedientePage({
 
   const expediente = await prisma.expediente.findUnique({
     where: { id: expedienteId },
-    include: { tipoDocumento: true, servicioOrigen: true, estadoActual: true, adjunto: true },
+    include: {
+      tipoDocumento: true,
+      servicioOrigen: true,
+      estadoActual: true,
+      adjunto: true,
+      viaResolucion: true,
+    },
   });
 
   if (!expediente) {
@@ -41,6 +48,43 @@ export default async function DetalleExpedientePage({
       orderBy: { fechaCambio: 'asc' },
     }),
   ]);
+
+  const lineasSalidas = salidas.map((s) => {
+    const detalle =
+      s.tipo === 'NOTA'
+        ? `N° ${s.nroNota ?? '—'} → ${s.destino?.nombre ?? '—'} (firmada por ${s.firmadaPor ?? '—'})`
+        : s.tipo === 'PORTAL'
+          ? `Referencia: ${s.referencia ?? '—'}`
+          : s.descripcion;
+    return `- [${formatearFecha(s.fecha)}] ${s.tipo}: ${detalle}`;
+  });
+
+  const lineasTrazabilidad = trazabilidad.map((t) => {
+    const cambio = t.estadoAnterior
+      ? `${t.estadoAnterior.nombre} → ${t.estadoNuevo.nombre}`
+      : `Ingreso: ${t.estadoNuevo.nombre}`;
+    return `- [${formatearFechaHora(t.fechaCambio)}] ${cambio}${t.observaciones ? ` (${t.observaciones})` : ''}`;
+  });
+
+  const resumenTexto = [
+    `Expediente SUOC ${expediente.nroSuoc}/${expediente.anioSuoc}`,
+    `N° de mesa de entrada: ${expediente.nroMesaEntrada}`,
+    `N° SIMESE: ${expediente.nroSimese ?? '—'}`,
+    `Ingreso al Depto. Administrativo: ${formatearFechaHora(expediente.fechaIngresoAdm)}`,
+    `Ingreso a la SUOC: ${formatearFechaHora(expediente.fechaIngresoSuoc)}`,
+    `Tipo de documento: ${expediente.tipoDocumento.nombre}`,
+    `Servicio de origen: ${expediente.servicioOrigen.nombre}`,
+    `Asunto: ${expediente.asunto}`,
+    `Monto estimado: ${formatearMonto(expediente.montoEstimado?.toString())}`,
+    `Estado actual: ${expediente.estadoActual.nombre}`,
+    `Vía de resolución prevista: ${expediente.viaResolucion?.nombre ?? '—'}`,
+    '',
+    'Historial de trazabilidad:',
+    ...(lineasTrazabilidad.length ? lineasTrazabilidad : ['(sin registros)']),
+    '',
+    'Salidas registradas:',
+    ...(lineasSalidas.length ? lineasSalidas : ['(sin salidas)']),
+  ].join('\n');
 
   return (
     <div className="mx-auto max-w-3xl p-6">
@@ -71,6 +115,10 @@ export default async function DetalleExpedientePage({
           etiqueta="Monto estimado"
           valor={formatearMonto(expediente.montoEstimado?.toString())}
         />
+        <Campo
+          etiqueta="Vía de resolución prevista"
+          valor={expediente.viaResolucion?.nombre ?? '—'}
+        />
         <div className="col-span-2">
           <Campo etiqueta="Asunto" valor={expediente.asunto} multilinea />
         </div>
@@ -100,6 +148,7 @@ export default async function DetalleExpedientePage({
         >
           Editar datos
         </Link>
+        <CopiarResumenBoton texto={resumenTexto} />
         {!expediente.estadoActual.esFinal && (
           <CambiarEstadoForm expedienteId={expediente.id} estados={estados} />
         )}

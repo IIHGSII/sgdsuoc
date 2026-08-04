@@ -14,10 +14,11 @@ export default async function EditarExpedientePage({
   const expedienteId = Number(id);
   if (!Number.isInteger(expedienteId)) notFound();
 
-  const [expediente, tiposDocumento, servicios] = await Promise.all([
+  const [expediente, tiposDocumento, servicios, viasResolucion] = await Promise.all([
     prisma.expediente.findUnique({ where: { id: expedienteId }, include: { adjunto: true } }),
     prisma.tipoDocumento.findMany({ orderBy: { nombre: 'asc' } }),
     prisma.servicio.findMany({ orderBy: { nombre: 'asc' } }),
+    prisma.viaResolucion.findMany({ orderBy: { nombre: 'asc' } }),
   ]);
 
   if (!expediente) notFound();
@@ -27,6 +28,7 @@ export default async function EditarExpedientePage({
       expedienteId={expediente.id}
       tiposDocumento={tiposDocumento}
       servicios={servicios}
+      viasResolucion={viasResolucion}
       valoresIniciales={{
         nroMesaEntrada: expediente.nroMesaEntrada,
         nroSimese: expediente.nroSimese ?? '',
@@ -36,6 +38,7 @@ export default async function EditarExpedientePage({
         servicioOrigenId: expediente.servicioOrigenId,
         asunto: expediente.asunto,
         montoEstimado: expediente.montoEstimado?.toString() ?? '',
+        viaResolucionId: expediente.viaResolucionId ?? undefined,
       }}
       adjuntoActual={
         expediente.adjunto

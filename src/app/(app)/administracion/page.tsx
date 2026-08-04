@@ -3,6 +3,7 @@ import { verifySession } from '@/lib/dal';
 import { prisma } from '@/lib/prisma';
 import { CatalogoTabla } from './catalogo-tabla';
 import { EstadoTabla } from './estado-tabla';
+import { ViaResolucionTabla } from './via-resolucion-tabla';
 import { cambiarPasswordAction } from './password-actions';
 
 export default async function AdministracionPage({
@@ -13,11 +14,12 @@ export default async function AdministracionPage({
   await verifySession();
   const { error, ok } = await searchParams;
 
-  const [estados, tiposDocumento, servicios, destinos] = await Promise.all([
+  const [estados, tiposDocumento, servicios, destinos, viasResolucion] = await Promise.all([
     prisma.estado.findMany({ orderBy: { orden: 'asc' } }),
     prisma.tipoDocumento.findMany({ orderBy: { nombre: 'asc' } }),
     prisma.servicio.findMany({ orderBy: { nombre: 'asc' } }),
     prisma.destino.findMany({ orderBy: { nombre: 'asc' } }),
+    prisma.viaResolucion.findMany({ orderBy: { nombre: 'asc' } }),
   ]);
 
   return (
@@ -39,6 +41,7 @@ export default async function AdministracionPage({
       <CatalogoTabla catalogo="tipoDocumento" titulo="Tipos de documento" items={tiposDocumento} />
       <CatalogoTabla catalogo="servicio" titulo="Servicios" items={servicios} />
       <CatalogoTabla catalogo="destino" titulo="Destinos" items={destinos} />
+      <ViaResolucionTabla items={viasResolucion} destinos={destinos} />
 
       <section>
         <h2 className="mb-2 text-sm font-semibold text-gray-900">Cambiar contraseña</h2>

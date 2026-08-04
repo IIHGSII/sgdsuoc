@@ -10,10 +10,12 @@ type Opcion = { id: number; nombre: string };
 export function NuevoExpedienteForm({
   tiposDocumento,
   servicios,
+  viasResolucion,
   fechaHoraActual,
 }: {
   tiposDocumento: Opcion[];
   servicios: Opcion[];
+  viasResolucion: Opcion[];
   fechaHoraActual: string;
 }) {
   const [state, formAction, pending] = useActionState(crearExpedienteAction, undefined);
@@ -107,6 +109,13 @@ export function NuevoExpedienteForm({
         type="number"
         step="0.01"
         defaultValue={v?.montoEstimado}
+      />
+
+      <ComboboxSelect
+        name="viaResolucionId"
+        label="Vía de resolución prevista (opcional)"
+        opciones={viasResolucion}
+        defaultValue={v?.viaResolucionId ? Number(v.viaResolucionId) : undefined}
       />
 
       <div>

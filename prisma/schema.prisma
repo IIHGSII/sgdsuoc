@@ -65,9 +65,26 @@ model Destino {
   id     Int    @id @default(autoincrement())
   nombre String @unique
 
-  salidas Salida[]
+  salidas        Salida[]
+  viasResolucion ViaResolucion[]
 
   @@map("destinos")
+}
+
+/// Vía de resolución prevista para un expediente (ej. "Portal de contrataciones",
+/// "Nota a Insumos Estratégicos"): se elige opcionalmente al cargarlo para
+/// sugerir después el tipo y destino de la salida, sin tener que redescubrirlo.
+model ViaResolucion {
+  id                 Int         @id @default(autoincrement())
+  nombre             String      @unique
+  tipoSalidaSugerido TipoSalida? @map("tipo_salida_sugerido")
+  destinoSugeridoId  Int?        @map("destino_sugerido_id")
+
+  destinoSugerido Destino? @relation(fields: [destinoSugeridoId], references: [id], onDelete: SetNull)
+
+  expedientes Expediente[]
+
+  @@map("vias_resolucion")
 }
 
 // ---------------------------------------------------------------------------
@@ -114,12 +131,16 @@ model Expediente {
 
   adjuntoId Int? @unique @map("adjunto_id")
 
+  /// Vía de resolución prevista (opcional): sugiere después el tipo/destino de la salida.
+  viaResolucionId Int? @map("via_resolucion_id")
+
   creadoEn DateTime @default(now()) @map("creado_en")
 
-  tipoDocumento  TipoDocumento @relation(fields: [tipoDocumentoId], references: [id], onDelete: Restrict)
-  servicioOrigen Servicio      @relation(fields: [servicioOrigenId], references: [id], onDelete: Restrict)
-  estadoActual   Estado        @relation("EstadoActualDeExpediente", fields: [estadoActualId], references: [id], onDelete: Restrict)
-  adjunto        Adjunto?      @relation(fields: [adjuntoId], references: [id], onDelete: SetNull)
+  tipoDocumento  TipoDocumento  @relation(fields: [tipoDocumentoId], references: [id], onDelete: Restrict)
+  servicioOrigen Servicio       @relation(fields: [servicioOrigenId], references: [id], onDelete: Restrict)
+  estadoActual   Estado         @relation("EstadoActualDeExpediente", fields: [estadoActualId], references: [id], onDelete: Restrict)
+  adjunto        Adjunto?       @relation(fields: [adjuntoId], references: [id], onDelete: SetNull)
+  viaResolucion  ViaResolucion? @relation(fields: [viaResolucionId], references: [id], onDelete: Restrict)
 
   salidas      Salida[]
   trazabilidad Trazabilidad[]

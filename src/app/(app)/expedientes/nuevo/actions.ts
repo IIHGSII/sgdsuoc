@@ -17,6 +17,7 @@ const CrearExpedienteSchema = z.object({
   servicioOrigenId: z.string().min(1, 'Seleccioná el servicio de origen.'),
   asunto: z.string().trim().min(1, 'Ingresá el asunto.'),
   montoEstimado: z.string().trim(),
+  viaResolucionId: z.string().trim(),
 });
 
 export type ValoresFormulario = {
@@ -29,6 +30,7 @@ export type ValoresFormulario = {
   servicioOrigenId: string;
   asunto: string;
   montoEstimado: string;
+  viaResolucionId: string;
 };
 
 export type CrearExpedienteState =
@@ -50,6 +52,7 @@ export async function crearExpedienteAction(
     servicioOrigenId: String(formData.get('servicioOrigenId') ?? ''),
     asunto: String(formData.get('asunto') ?? ''),
     montoEstimado: String(formData.get('montoEstimado') ?? ''),
+    viaResolucionId: String(formData.get('viaResolucionId') ?? ''),
   };
 
   function conError(mensaje: string): CrearExpedienteState {
@@ -99,6 +102,14 @@ export async function crearExpedienteAction(
     montoEstimado = monto.toFixed(2);
   }
 
+  let viaResolucionId: number | null = null;
+  if (datos.viaResolucionId) {
+    viaResolucionId = Number(datos.viaResolucionId);
+    if (!Number.isInteger(viaResolucionId) || viaResolucionId <= 0) {
+      return conError('Seleccioná la vía de resolución de la lista, o dejala en blanco.');
+    }
+  }
+
   const archivo = formData.get('adjunto');
 
   let expedienteId: number;
@@ -116,6 +127,7 @@ export async function crearExpedienteAction(
       asunto: datos.asunto,
       montoEstimado,
       adjuntoId,
+      viaResolucionId,
     });
     expedienteId = expediente.id;
   } catch (error) {

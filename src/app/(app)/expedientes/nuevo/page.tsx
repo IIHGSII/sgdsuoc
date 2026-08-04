@@ -6,15 +6,17 @@ import { NuevoExpedienteForm } from './nuevo-expediente-form';
 export default async function NuevoExpedientePage() {
   await verifySession();
 
-  const [tiposDocumento, servicios] = await Promise.all([
+  const [tiposDocumento, servicios, viasResolucion] = await Promise.all([
     prisma.tipoDocumento.findMany({ orderBy: { nombre: 'asc' } }),
     prisma.servicio.findMany({ orderBy: { nombre: 'asc' } }),
+    prisma.viaResolucion.findMany({ orderBy: { nombre: 'asc' } }),
   ]);
 
   return (
     <NuevoExpedienteForm
       tiposDocumento={tiposDocumento}
       servicios={servicios}
+      viasResolucion={viasResolucion}
       fechaHoraActual={ahoraParaInputLocal()}
     />
   );

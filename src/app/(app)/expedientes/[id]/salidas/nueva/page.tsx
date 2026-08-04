@@ -12,7 +12,7 @@ export default async function NuevaSalidaPage({ params }: { params: Promise<{ id
 
   const expediente = await prisma.expediente.findUnique({
     where: { id: expedienteId },
-    include: { estadoActual: true },
+    include: { estadoActual: true, viaResolucion: { include: { destinoSugerido: true } } },
   });
   if (!expediente) notFound();
 
@@ -30,6 +30,14 @@ export default async function NuevaSalidaPage({ params }: { params: Promise<{ id
     .map((s) => s.firmadaPor)
     .filter((f): f is string => Boolean(f));
 
+  const sugerencia = expediente.viaResolucion
+    ? {
+        nombre: expediente.viaResolucion.nombre,
+        tipoSalidaSugerido: expediente.viaResolucion.tipoSalidaSugerido,
+        destinoSugeridoId: expediente.viaResolucion.destinoSugeridoId,
+      }
+    : null;
+
   return (
     <NuevaSalidaForm
       expedienteId={expediente.id}
@@ -38,6 +46,7 @@ export default async function NuevaSalidaPage({ params }: { params: Promise<{ id
       firmantesSugeridos={firmantesSugeridos}
       fechaHoyLocal={hoyParaInputDate()}
       puedeCambiarEstado={!expediente.estadoActual.esFinal}
+      sugerencia={sugerencia}
     />
   );
 }
