@@ -7,22 +7,28 @@ import {
   TIMEOUT_TRANSACCION_CON_ADJUNTO_MS,
   type ArchivoPdf,
 } from '@/lib/adjuntos';
+import { unirFotosEnPdf } from '@/lib/fotos';
 
 const MAX_REINTENTOS = 5;
 
 export type DatosNuevoExpediente = {
-  nroMesaEntrada: string;
+  // Mesa de entrada, fecha adm., tipo, servicio y asunto los exige el
+  // formulario de alta; solo faltan en los cargados con fotos (porProcesar).
+  nroMesaEntrada?: string | null;
   nroSuocManual?: number;
   nroSimese?: string | null;
-  fechaIngresoAdm: Date;
+  fechaIngresoAdm?: Date | null;
   fechaIngresoSuoc: Date;
-  tipoDocumentoId: number;
-  servicioOrigenId: number;
-  asunto: string;
+  tipoDocumentoId?: number | null;
+  servicioOrigenId?: number | null;
+  asunto?: string | null;
   montoEstimado?: string | null;
   /** Se guarda dentro de la misma transacción: si la creación falla, no queda huérfano. */
   adjunto?: ArchivoPdf | null;
   viaResolucionId?: number | null;
+  /** Fotos JPEG de las hojas, en orden; se guardan dentro de la misma transacción. */
+  fotos?: Buffer<ArrayBuffer>[];
+  porProcesar?: boolean;
 };
 
 export class NumeroSuocDuplicadoError extends Error {}
@@ -55,21 +61,36 @@ export async function crearExpediente(datos: DatosNuevoExpediente) {
 
           const expediente = await tx.expediente.create({
             data: {
-              nroMesaEntrada: datos.nroMesaEntrada,
+              nroMesaEntrada: datos.nroMesaEntrada || null,
               nroSuoc,
               anioSuoc,
               nroSimese: datos.nroSimese || null,
-              fechaIngresoAdm: datos.fechaIngresoAdm,
+              fechaIngresoAdm: datos.fechaIngresoAdm ?? null,
               fechaIngresoSuoc: datos.fechaIngresoSuoc,
-              tipoDocumentoId: datos.tipoDocumentoId,
-              servicioOrigenId: datos.servicioOrigenId,
-              asunto: datos.asunto,
+              tipoDocumentoId: datos.tipoDocumentoId ?? null,
+              servicioOrigenId: datos.servicioOrigenId ?? null,
+              asunto: datos.asunto || null,
               montoEstimado: datos.montoEstimado || null,
               estadoActualId: estadoInicial.id,
               adjuntoId,
               viaResolucionId: datos.viaResolucionId ?? null,
+              porProcesar: datos.porProcesar ?? false,
             },
           });
+
+          for (const [i, foto] of (datos.fotos ?? []).entries()) {
+            const adjuntoFoto = await tx.adjunto.create({
+              data: {
+                nombreArchivo: `${nroSuoc}-${anioSuoc} - hoja ${i + 1}.jpg`,
+                mimeType: 'image/jpeg',
+                tamanioBytes: foto.length,
+                contenido: foto,
+              },
+            });
+            await tx.fotoExpediente.create({
+              data: { expedienteId: expediente.id, orden: i + 1, adjuntoId: adjuntoFoto.id },
+            });
+          }
 
           await tx.trazabilidad.create({
             data: {
@@ -106,6 +127,17 @@ export async function crearExpediente(datos: DatosNuevoExpediente) {
   }
 
   throw new Error('No se pudo asignar el número SUOC tras varios intentos. Volvé a intentar.');
+}
+
+/**
+ * Alta rápida desde el celular: solo las fotos de las hojas. Asigna el número
+ * SUOC en el momento (fecha de ingreso = ahora), guarda las fotos y su PDF
+ * unido como adjunto, y deja el expediente en la bandeja "Por procesar".
+ */
+export async function crearExpedienteConFotos(fotos: Buffer<ArrayBuffer>[], ahora = new Date()) {
+  // El PDF se arma antes de la transacción (no depende del número) para no alargarla.
+  const pdf = await unirFotosEnPdf(fotos, 'Expediente escaneado.pdf');
+  return crearExpediente({ fechaIngresoSuoc: ahora, fotos, adjunto: pdf, porProcesar: true });
 }
 
 export type DatosEditarExpediente = {
@@ -163,9 +195,10 @@ export async function editarExpediente(id: number, datos: DatosEditarExpediente)
 
       const cambiaIngresoSuoc = !mismoMinuto(datos.fechaIngresoSuoc, actual.fechaIngresoSuoc);
       const fechaIngresoSuoc = cambiaIngresoSuoc ? datos.fechaIngresoSuoc : actual.fechaIngresoSuoc;
-      const fechaIngresoAdm = mismoMinuto(datos.fechaIngresoAdm, actual.fechaIngresoAdm)
-        ? actual.fechaIngresoAdm
-        : datos.fechaIngresoAdm;
+      const fechaIngresoAdm =
+        actual.fechaIngresoAdm && mismoMinuto(datos.fechaIngresoAdm, actual.fechaIngresoAdm)
+          ? actual.fechaIngresoAdm
+          : datos.fechaIngresoAdm;
 
       if (cambiaIngresoSuoc) {
         const anioNuevo = anioEnParaguay(fechaIngresoSuoc);
@@ -217,6 +250,8 @@ export async function editarExpediente(id: number, datos: DatosEditarExpediente)
           montoEstimado: datos.montoEstimado || null,
           viaResolucionId: datos.viaResolucionId ?? null,
           ...(nuevoAdjuntoId ? { adjuntoId: nuevoAdjuntoId } : {}),
+          // La edición exige todos los datos obligatorios: si venía de la bandeja, sale de ella.
+          porProcesar: false,
         },
       });
 

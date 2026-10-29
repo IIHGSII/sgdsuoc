@@ -88,7 +88,8 @@ model ViaResolucion {
 }
 
 // ---------------------------------------------------------------------------
-// Adjuntos (PDF guardados como BLOB en MySQL; los usan Expediente y Salida)
+// Adjuntos (PDF o fotos guardados como BLOB en MySQL; los usan Expediente,
+// Salida y las fotos de un expediente cargado desde el celular)
 // ---------------------------------------------------------------------------
 
 model Adjunto {
@@ -101,8 +102,25 @@ model Adjunto {
 
   expediente Expediente?
   salida     Salida?
+  foto       FotoExpediente?
 
   @@map("adjuntos")
+}
+
+/// Foto de una hoja de un expediente cargado desde el celular, en el orden de
+/// las hojas. Además, todas juntas se unen en el PDF que queda como adjunto
+/// del expediente.
+model FotoExpediente {
+  id           Int @id @default(autoincrement())
+  expedienteId Int @map("expediente_id")
+  orden        Int
+  adjuntoId    Int @unique @map("adjunto_id")
+
+  expediente Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  adjunto    Adjunto    @relation(fields: [adjuntoId], references: [id], onDelete: Cascade)
+
+  @@unique([expedienteId, orden])
+  @@map("fotos_expediente")
 }
 
 // ---------------------------------------------------------------------------
@@ -112,19 +130,26 @@ model Adjunto {
 model Expediente {
   id Int @id @default(autoincrement())
 
-  nroMesaEntrada String  @map("nro_mesa_entrada")
+  // Mesa de entrada, fecha de ingreso adm., tipo, servicio y asunto son
+  // obligatorios al cargar desde el formulario; solo quedan vacíos en los
+  // expedientes cargados con fotos desde el celular hasta que se procesan
+  // (porProcesar = true).
+  nroMesaEntrada String? @map("nro_mesa_entrada")
   nroSuoc        Int     @map("nro_suoc")
   anioSuoc       Int     @map("anio_suoc")
   nroSimese      String? @map("nro_simese")
 
-  fechaIngresoAdm  DateTime @map("fecha_ingreso_adm")
-  fechaIngresoSuoc DateTime @map("fecha_ingreso_suoc")
+  fechaIngresoAdm  DateTime? @map("fecha_ingreso_adm")
+  fechaIngresoSuoc DateTime  @map("fecha_ingreso_suoc")
 
-  tipoDocumentoId  Int @map("tipo_documento_id")
-  servicioOrigenId Int @map("servicio_origen_id")
+  tipoDocumentoId  Int? @map("tipo_documento_id")
+  servicioOrigenId Int? @map("servicio_origen_id")
 
-  asunto        String   @db.Text
+  asunto        String?  @db.Text
   montoEstimado Decimal? @map("monto_estimado") @db.Decimal(15, 2)
+
+  /// Cargado con fotos desde el celular y todavía sin completar sus datos (bandeja "Por procesar").
+  porProcesar Boolean @default(false) @map("por_procesar")
 
   estadoActualId           Int      @map("estado_actual_id")
   fechaUltimaActualizacion DateTime @updatedAt @map("fecha_ultima_actualizacion")
@@ -136,18 +161,20 @@ model Expediente {
 
   creadoEn DateTime @default(now()) @map("creado_en")
 
-  tipoDocumento  TipoDocumento  @relation(fields: [tipoDocumentoId], references: [id], onDelete: Restrict)
-  servicioOrigen Servicio       @relation(fields: [servicioOrigenId], references: [id], onDelete: Restrict)
+  tipoDocumento  TipoDocumento? @relation(fields: [tipoDocumentoId], references: [id], onDelete: Restrict)
+  servicioOrigen Servicio?      @relation(fields: [servicioOrigenId], references: [id], onDelete: Restrict)
   estadoActual   Estado         @relation("EstadoActualDeExpediente", fields: [estadoActualId], references: [id], onDelete: Restrict)
   adjunto        Adjunto?       @relation(fields: [adjuntoId], references: [id], onDelete: SetNull)
   viaResolucion  ViaResolucion? @relation(fields: [viaResolucionId], references: [id], onDelete: Restrict)
 
   salidas      Salida[]
   trazabilidad Trazabilidad[]
+  fotos        FotoExpediente[]
 
   @@unique([nroSuoc, anioSuoc])
   @@index([nroMesaEntrada])
   @@index([nroSimese])
+  @@index([porProcesar])
   @@map("expedientes")
 }
 

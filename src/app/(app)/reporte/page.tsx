@@ -77,7 +77,9 @@ export default async function ReportePage({
                     {fila.nroSuoc}/{fila.anioSuoc}
                   </Link>
                 </td>
-                <td className="max-w-xs truncate px-4 py-2 text-gray-700">{fila.asunto}</td>
+                <td className="max-w-xs truncate px-4 py-2 text-gray-700">
+                  {fila.asunto ?? 'Por procesar'}
+                </td>
                 {estados.map((e) => (
                   <td key={e.id} className="whitespace-nowrap px-4 py-2 text-gray-700">
                     {fila.tiempos.has(e.id) ? formatearDuracion(fila.tiempos.get(e.id)!) : '—'}

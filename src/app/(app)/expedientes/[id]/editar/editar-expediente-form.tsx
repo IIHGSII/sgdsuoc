@@ -25,8 +25,8 @@ export function EditarExpedienteForm({
     nroSimese: string;
     fechaIngresoAdm: string;
     fechaIngresoSuoc: string;
-    tipoDocumentoId: number;
-    servicioOrigenId: number;
+    tipoDocumentoId?: number;
+    servicioOrigenId?: number;
     asunto: string;
     montoEstimado: string;
     viaResolucionId?: number;

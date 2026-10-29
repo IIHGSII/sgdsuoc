@@ -15,10 +15,11 @@ export default async function ListadoExpedientesPage({
     servicio?: string;
     viaResolucion?: string;
     q?: string;
+    porProcesar?: string;
   }>;
 }) {
   await verifySession();
-  const { anio, estado, tipo, servicio, viaResolucion, q } = await searchParams;
+  const { anio, estado, tipo, servicio, viaResolucion, q, porProcesar } = await searchParams;
 
   const filtroTexto = q ? construirFiltroTexto(q) : null;
 
@@ -29,6 +30,7 @@ export default async function ListadoExpedientesPage({
     tipoDocumentoId: enteroDeParametro(tipo),
     servicioOrigenId: enteroDeParametro(servicio),
     viaResolucionId: enteroDeParametro(viaResolucion),
+    ...(porProcesar === '1' ? { porProcesar: true } : {}),
     ...(filtroTexto ?? {}),
   };
 
@@ -142,6 +144,16 @@ export default async function ListadoExpedientesPage({
             ))}
           </select>
         </Campo>
+        <label className="flex items-center gap-2 self-center text-xs text-gray-600">
+          <input
+            type="checkbox"
+            name="porProcesar"
+            value="1"
+            defaultChecked={porProcesar === '1'}
+            className="h-4 w-4"
+          />
+          Solo por procesar
+        </label>
         <button
           type="submit"
           className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
@@ -176,9 +188,11 @@ export default async function ListadoExpedientesPage({
                     {exp.nroSuoc}/{exp.anioSuoc}
                   </Link>
                 </td>
-                <td className="px-4 py-2 text-gray-700">{exp.nroMesaEntrada}</td>
-                <td className="max-w-xs truncate px-4 py-2 text-gray-700">{exp.asunto}</td>
-                <td className="px-4 py-2 text-gray-700">{exp.servicioOrigen.nombre}</td>
+                <td className="px-4 py-2 text-gray-700">{exp.nroMesaEntrada ?? '—'}</td>
+                <td className="max-w-xs truncate px-4 py-2 text-gray-700">
+                  {exp.asunto ?? 'Por procesar'}
+                </td>
+                <td className="px-4 py-2 text-gray-700">{exp.servicioOrigen?.nombre ?? '—'}</td>
                 <td className="px-4 py-2 text-gray-700">{exp.estadoActual.nombre}</td>
                 <td className="px-4 py-2 text-gray-700">
                   {formatearFechaHora(exp.fechaIngresoSuoc)}

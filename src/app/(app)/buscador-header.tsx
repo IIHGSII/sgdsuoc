@@ -81,7 +81,7 @@ export function BuscadorHeader() {
                   {r.nroSuoc}/{r.anioSuoc}
                 </span>{' '}
                 <span className="text-gray-500">— {r.estado}</span>
-                <div className="truncate text-gray-600">{r.asunto}</div>
+                <div className="truncate text-gray-600">{r.asunto ?? 'Por procesar'}</div>
               </button>
             </li>
           ))}

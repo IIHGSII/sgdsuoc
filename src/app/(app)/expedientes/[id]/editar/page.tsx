@@ -30,13 +30,16 @@ export default async function EditarExpedientePage({
       servicios={servicios}
       viasResolucion={viasResolucion}
       valoresIniciales={{
-        nroMesaEntrada: expediente.nroMesaEntrada,
+        // Vacíos solo en los expedientes cargados con fotos y todavía sin procesar.
+        nroMesaEntrada: expediente.nroMesaEntrada ?? '',
         nroSimese: expediente.nroSimese ?? '',
-        fechaIngresoAdm: fechaParaInputLocal(expediente.fechaIngresoAdm),
+        fechaIngresoAdm: expediente.fechaIngresoAdm
+          ? fechaParaInputLocal(expediente.fechaIngresoAdm)
+          : '',
         fechaIngresoSuoc: fechaParaInputLocal(expediente.fechaIngresoSuoc),
-        tipoDocumentoId: expediente.tipoDocumentoId,
-        servicioOrigenId: expediente.servicioOrigenId,
-        asunto: expediente.asunto,
+        tipoDocumentoId: expediente.tipoDocumentoId ?? undefined,
+        servicioOrigenId: expediente.servicioOrigenId ?? undefined,
+        asunto: expediente.asunto ?? '',
         montoEstimado: expediente.montoEstimado?.toString() ?? '',
         viaResolucionId: expediente.viaResolucionId ?? undefined,
       }}

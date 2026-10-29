@@ -1,6 +1,15 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      // El default (1 MB) rechazaba los PDF de más de 1 MB aunque el sistema
+      // admite hasta 10 MB (MAX_BYTES_ADJUNTO), y no alcanza para las fotos de
+      // un expediente cargado desde el celular (MAX_BYTES_FOTOS_TOTAL = 20 MB).
+      // Margen extra para el resto del formulario.
+      bodySizeLimit: '21mb',
+    },
+  },
   async headers() {
     return [
       {

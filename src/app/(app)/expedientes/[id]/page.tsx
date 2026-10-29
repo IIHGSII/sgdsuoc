@@ -9,11 +9,15 @@ import { CopiarResumenBoton } from './copiar-resumen-boton';
 
 export default async function DetalleExpedientePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ nuevo?: string }>;
 }) {
   await verifySession();
   const { id } = await params;
+  // ?nuevo=1: recién cargado con fotos, se muestra el número grande para anotarlo en el papel.
+  const { nuevo } = await searchParams;
   const expedienteId = Number(id);
 
   if (!Number.isInteger(expedienteId)) {
@@ -28,6 +32,7 @@ export default async function DetalleExpedientePage({
       estadoActual: true,
       adjunto: true,
       viaResolucion: true,
+      fotos: { orderBy: { orden: 'asc' }, select: { adjuntoId: true } },
     },
   });
 
@@ -68,13 +73,13 @@ export default async function DetalleExpedientePage({
 
   const resumenTexto = [
     `Expediente SUOC ${expediente.nroSuoc}/${expediente.anioSuoc}`,
-    `N° de mesa de entrada: ${expediente.nroMesaEntrada}`,
+    `N° de mesa de entrada: ${expediente.nroMesaEntrada ?? '—'}`,
     `N° SIMESE: ${expediente.nroSimese ?? '—'}`,
-    `Ingreso al Depto. Administrativo: ${formatearFechaHora(expediente.fechaIngresoAdm)}`,
+    `Ingreso al Depto. Administrativo: ${expediente.fechaIngresoAdm ? formatearFechaHora(expediente.fechaIngresoAdm) : '—'}`,
     `Ingreso a la SUOC: ${formatearFechaHora(expediente.fechaIngresoSuoc)}`,
-    `Tipo de documento: ${expediente.tipoDocumento.nombre}`,
-    `Servicio de origen: ${expediente.servicioOrigen.nombre}`,
-    `Asunto: ${expediente.asunto}`,
+    `Tipo de documento: ${expediente.tipoDocumento?.nombre ?? '—'}`,
+    `Servicio de origen: ${expediente.servicioOrigen?.nombre ?? '—'}`,
+    `Asunto: ${expediente.asunto ?? '(por procesar)'}`,
     `Monto estimado: ${formatearMonto(expediente.montoEstimado?.toString())}`,
     `Estado actual: ${expediente.estadoActual.nombre}`,
     `Vía de resolución prevista: ${expediente.viaResolucion?.nombre ?? '—'}`,
@@ -97,19 +102,35 @@ export default async function DetalleExpedientePage({
         </Link>
       </div>
 
+      {nuevo === '1' && (
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 text-center">
+          <p className="text-sm text-green-800">Expediente cargado. Anotá en el papel:</p>
+          <p className="mt-1 text-4xl font-bold text-green-900">
+            {expediente.nroSuoc}/{expediente.anioSuoc}
+          </p>
+        </div>
+      )}
+
+      {expediente.porProcesar && (
+        <p className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+          <strong>Por procesar:</strong> se cargó con fotos desde el celular y todavía faltan sus
+          datos. Completalos con &quot;Editar datos&quot;; al guardarlos, sale de la bandeja.
+        </p>
+      )}
+
       <dl className="grid grid-cols-1 gap-x-6 sm:grid-cols-2 gap-y-4 rounded-lg border border-gray-200 bg-white p-6 text-sm">
-        <Campo etiqueta="N° de mesa de entrada" valor={expediente.nroMesaEntrada} />
+        <Campo etiqueta="N° de mesa de entrada" valor={expediente.nroMesaEntrada ?? '—'} />
         <Campo etiqueta="N° SIMESE" valor={expediente.nroSimese ?? '—'} />
         <Campo
           etiqueta="Ingreso al Depto. Administrativo"
-          valor={formatearFechaHora(expediente.fechaIngresoAdm)}
+          valor={expediente.fechaIngresoAdm ? formatearFechaHora(expediente.fechaIngresoAdm) : '—'}
         />
         <Campo
           etiqueta="Ingreso a la SUOC"
           valor={formatearFechaHora(expediente.fechaIngresoSuoc)}
         />
-        <Campo etiqueta="Tipo de documento" valor={expediente.tipoDocumento.nombre} />
-        <Campo etiqueta="Servicio de origen" valor={expediente.servicioOrigen.nombre} />
+        <Campo etiqueta="Tipo de documento" valor={expediente.tipoDocumento?.nombre ?? '—'} />
+        <Campo etiqueta="Servicio de origen" valor={expediente.servicioOrigen?.nombre ?? '—'} />
         <Campo etiqueta="Estado actual" valor={expediente.estadoActual.nombre} />
         <Campo
           etiqueta="Monto estimado"
@@ -120,7 +141,7 @@ export default async function DetalleExpedientePage({
           valor={expediente.viaResolucion?.nombre ?? '—'}
         />
         <div className="sm:col-span-2">
-          <Campo etiqueta="Asunto" valor={expediente.asunto} multilinea />
+          <Campo etiqueta="Asunto" valor={expediente.asunto ?? '—'} multilinea />
         </div>
         <div className="sm:col-span-2">
           <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">Adjunto</dt>
@@ -139,6 +160,31 @@ export default async function DetalleExpedientePage({
             )}
           </dd>
         </div>
+        {expediente.fotos.length > 0 && (
+          <div className="sm:col-span-2">
+            <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              Fotos de las hojas ({expediente.fotos.length})
+            </dt>
+            <dd className="mt-2 flex flex-wrap gap-2">
+              {expediente.fotos.map((foto, i) => (
+                <a
+                  key={foto.adjuntoId}
+                  href={`/adjuntos/${foto.adjuntoId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`Hoja ${i + 1}`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- miniaturas servidas por la ruta de adjuntos, no por el optimizador de imágenes */}
+                  <img
+                    src={`/adjuntos/${foto.adjuntoId}`}
+                    alt={`Hoja ${i + 1}`}
+                    className="h-28 w-20 rounded border border-gray-200 object-cover"
+                  />
+                </a>
+              ))}
+            </dd>
+          </div>
+        )}
       </dl>
 
       <div className="mt-4 flex flex-wrap items-start gap-2">

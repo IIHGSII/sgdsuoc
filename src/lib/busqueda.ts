@@ -6,7 +6,8 @@ export type ResultadoBusqueda = {
   id: number;
   nroSuoc: number;
   anioSuoc: number;
-  asunto: string;
+  /** null en los expedientes cargados con fotos que todavía no se procesaron. */
+  asunto: string | null;
   estado: string;
 };
 

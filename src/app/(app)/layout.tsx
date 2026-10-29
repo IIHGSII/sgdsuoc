@@ -15,7 +15,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
         <BuscadorHeader />
 
-        <nav className="flex items-center gap-4 text-sm">
+        <nav className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          <Link href="/expedientes/rapido" className="font-medium text-blue-600 hover:underline">
+            Cargar con fotos
+          </Link>
           <Link href="/expedientes" className="text-blue-600 hover:underline">
             Expedientes
           </Link>
