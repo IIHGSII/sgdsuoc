@@ -34,6 +34,20 @@ async function main() {
   const adapter = new PrismaMariaDb(process.env.DATABASE_URL!, { useTextProtocol: true });
   const prisma = new PrismaClient({ adapter });
 
+  // La importación del sistema viejo ya se hizo y ese sistema fue desechado:
+  // re-importar pisaría con los datos viejos lo editado después en la app
+  // (estado actual, asunto, fechas). Solo se permite forzándolo a propósito.
+  const expedientesCargados = await prisma.expediente.count();
+  if (expedientesCargados > 0 && !process.argv.includes('--force')) {
+    console.error(
+      `La base ya tiene ${expedientesCargados} expedientes: la importación del sistema anterior ya se hizo.\n` +
+        'Volver a importar pisaría lo editado desde la app. Si de verdad hace falta, correr:\n' +
+        '  npm run import -- --force',
+    );
+    await prisma.$disconnect();
+    process.exit(1);
+  }
+
   const registros = cargarDumpdata();
   const resumen = await importarRegistros(registros, prisma);
 

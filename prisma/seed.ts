@@ -24,6 +24,20 @@ async function main() {
   const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
   const prisma = new PrismaClient({ adapter });
 
+  // El seed carga los catálogos iniciales desde el export del sistema viejo
+  // (ya desechado). Re-ejecutarlo devolvería el orden y "es final" de los
+  // estados a los valores viejos, pisando lo editado en Administración.
+  const estadosCargados = await prisma.estado.count();
+  if (estadosCargados > 0 && !process.argv.includes('--force')) {
+    console.error(
+      `La base ya tiene ${estadosCargados} estados: los catálogos iniciales ya se cargaron.\n` +
+        'Volver a correr el seed pisaría lo editado en Administración. Si de verdad hace falta, correr:\n' +
+        '  npm run db:seed -- --force',
+    );
+    await prisma.$disconnect();
+    process.exit(1);
+  }
+
   const registros = cargarDumpdata();
 
   // Estado: se preservan nombre/orden/es_final tal cual del sistema anterior.

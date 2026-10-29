@@ -55,6 +55,10 @@ ejemplo. Es idempotente (usa upsert por nombre):
 npm run db:seed
 ```
 
+Ya se corrió en producción: si la base ya tiene estados, se niega a correr de nuevo (pisaría el
+orden y "es final" editados en Administración), salvo que se fuerce con
+`npm run db:seed -- --force`.
+
 ## Importación de datos del sistema anterior
 
 `scripts/import-datos.ts` lee `data/datos_sgd.json` (mismo archivo que el seed) e importa
@@ -65,6 +69,10 @@ ya existan (correr `npm run db:seed` primero). Es idempotente:
 ```bash
 npm run import
 ```
+
+La importación ya se hizo y el sistema anterior fue desechado: si la base ya tiene expedientes,
+se niega a correr (re-importar pisaría con los datos viejos lo editado desde la app: estado
+actual, asunto, fechas), salvo que se fuerce con `npm run import -- --force`.
 
 ## Tests
 
