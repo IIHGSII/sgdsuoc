@@ -2,10 +2,11 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { verifySession } from '@/lib/dal';
 import { prisma } from '@/lib/prisma';
-import { formatearFecha, formatearFechaHora } from '@/lib/tz';
+import { formatearFecha, formatearFechaHora, hoyParaInputDate } from '@/lib/tz';
 import { formatearMonto } from '@/lib/format';
 import { CambiarEstadoForm } from './cambiar-estado-form';
 import { CopiarResumenBoton } from './copiar-resumen-boton';
+import { SeguimientoForm } from './seguimiento-form';
 
 export default async function DetalleExpedientePage({
   params,
@@ -40,7 +41,7 @@ export default async function DetalleExpedientePage({
     notFound();
   }
 
-  const [salidas, estados, trazabilidad] = await Promise.all([
+  const [salidas, estados, trazabilidad, novedades] = await Promise.all([
     prisma.salida.findMany({
       where: { expedienteId },
       include: { destino: true, adjunto: true },
@@ -52,7 +53,12 @@ export default async function DetalleExpedientePage({
       include: { estadoAnterior: true, estadoNuevo: true },
       orderBy: { fechaCambio: 'asc' },
     }),
+    prisma.novedadSeguimiento.findMany({
+      where: { expedienteId },
+      orderBy: [{ fecha: 'asc' }, { id: 'asc' }],
+    }),
   ]);
+  const seguimientoAbierto = expediente.seguimiento === 'ABIERTO';
 
   const lineasSalidas = salidas.map((s) => {
     const detalle =
@@ -89,6 +95,16 @@ export default async function DetalleExpedientePage({
     '',
     'Salidas registradas:',
     ...(lineasSalidas.length ? lineasSalidas : ['(sin salidas)']),
+    ...(novedades.length
+      ? [
+          '',
+          `Seguimiento fuera de la SUOC (${seguimientoAbierto ? 'abierto' : 'cerrado'}):`,
+          ...novedades.map(
+            (n) =>
+              `- [${formatearFecha(n.fecha)}] ${n.dondeEsta}: ${n.detalle}${n.cierre ? ' (cierre)' : ''}`,
+          ),
+        ]
+      : []),
   ].join('\n');
 
   return (
@@ -254,6 +270,37 @@ export default async function DetalleExpedientePage({
             ))}
           </ul>
         )}
+      </div>
+
+      <div className="mt-6">
+        <h2 className="mb-2 text-sm font-semibold text-gray-900">
+          Seguimiento fuera de la SUOC
+          {expediente.seguimiento && (
+            <span
+              className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${seguimientoAbierto ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}
+            >
+              {seguimientoAbierto ? 'Abierto' : 'Cerrado'}
+            </span>
+          )}
+        </h2>
+        {novedades.length > 0 && (
+          <ul className="mb-3 space-y-2">
+            {novedades.map((n) => (
+              <li key={n.id} className="rounded-lg border border-gray-200 bg-white p-3 text-sm">
+                <span className="text-gray-500">{formatearFecha(n.fecha)}</span> ·{' '}
+                <strong className="text-gray-900">{n.dondeEsta}</strong>
+                {n.cierre && <span className="ml-1 text-green-700">(cierre)</span>}
+                <p className="mt-1 whitespace-pre-wrap text-gray-700">{n.detalle}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+        <SeguimientoForm
+          expedienteId={expediente.id}
+          abierto={seguimientoAbierto}
+          dondeEstaActual={novedades.at(-1)?.dondeEsta ?? ''}
+          hoy={hoyParaInputDate()}
+        />
       </div>
 
       <div className="mt-6">

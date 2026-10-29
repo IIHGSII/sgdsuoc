@@ -5,8 +5,9 @@ import path from 'node:path';
 import { prisma } from '../src/lib/prisma';
 import { editarExpediente } from '../src/lib/expedientes';
 import { cambiarEstadoExpediente } from '../src/lib/estados';
+import { listarSeguimientosAbiertos, registrarNovedad } from '../src/lib/seguimiento';
 import { parseNumeroSuoc } from '../src/lib/busqueda';
-import { formatearFecha, formatearFechaHora, localAUtc } from '../src/lib/tz';
+import { formatearFecha, formatearFechaHora, hoyParaInputDate, localAUtc } from '../src/lib/tz';
 
 // Comandos para que Claude (o el usuario) opere el SGD desde la notebook,
 // usando las mismas funciones y validaciones que la web (nunca SQL directo).
@@ -23,6 +24,11 @@ import { formatearFecha, formatearFechaHora, localAUtc } from '../src/lib/tz';
 //       Parte de los valores actuales: lo que no se indica, no cambia.
 //       Al guardar, el expediente sale de la bandeja "Por procesar".
 //   npm run sgd -- estado 137/2026 "Archivado" ["observaciones"]
+//   npm run sgd -- seguir 137/2026 "DGGIES" "novedad" [--fecha 2026-10-29] [--cerrar]
+//       Seguimiento fuera de la SUOC: la primera novedad lo abre; con --cerrar,
+//       la novedad es el resultado final y lo cierra.
+//   npm run sgd -- seguimientos
+//       Lista los seguimientos abiertos, los más tiempo sin novedades primero.
 
 const CARPETA_TRABAJO = process.env.SGD_CARPETA_TRABAJO ?? 'C:\\Users\\hgs_b\\Documents\\SUOC 28';
 const TESSERACT = process.env.TESSERACT_PATH ?? 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe';
@@ -128,6 +134,7 @@ async function ver(numero: string | undefined) {
         include: { estadoAnterior: true, estadoNuevo: true },
       },
       salidas: { orderBy: { fecha: 'asc' }, include: { destino: true } },
+      novedades: { orderBy: [{ fecha: 'asc' }, { id: 'asc' }] },
     },
   });
   const lineas = [
@@ -150,8 +157,38 @@ async function ver(numero: string | undefined) {
             `  ${formatearFecha(s.fecha)} ${s.tipo}${s.destino ? ` → ${s.destino.nombre}` : ''}${s.nroNota ? ` N° ${s.nroNota}` : ''}: ${s.descripcion}`,
         )
       : ['  (ninguna)']),
+    `Seguimiento fuera de la SUOC: ${e.seguimiento ?? 'no'}`,
+    ...e.novedades.map(
+      (n) =>
+        `  ${formatearFecha(n.fecha)} ${n.dondeEsta}: ${n.detalle}${n.cierre ? ' (cierre)' : ''}`,
+    ),
   ];
   console.log(lineas.join('\n'));
+}
+
+async function seguir(numero: string | undefined, args: string[]) {
+  const { id } = await buscarExpediente(numero);
+  const [dondeEsta, detalle, ...resto] = args;
+  if (!dondeEsta || !detalle) {
+    throw new ErrorDeUso(
+      'Uso: seguir N/AAAA "Dónde está" "novedad" [--fecha AAAA-MM-DD] [--cerrar]',
+    );
+  }
+  const cerrar = resto.includes('--cerrar');
+  const o = leerOpciones(resto.filter((a) => a !== '--cerrar'));
+  const fecha = localAUtc(`${o.fecha ?? hoyParaInputDate()}T12:00`);
+  await registrarNovedad(id, { fecha, dondeEsta, detalle }, { cerrar });
+  await ver(numero);
+}
+
+async function seguimientos() {
+  const filas = await listarSeguimientosAbiertos();
+  if (!filas.length) return console.log('No hay seguimientos abiertos.');
+  for (const f of filas) {
+    console.log(
+      `${f.nroSuoc}/${f.anioSuoc} · ${f.diasSinNovedad}d sin novedades · ${f.dondeEsta} · ${formatearFecha(f.fechaUltimaNovedad)}: ${f.ultimaNovedad}\n  ${f.asunto ?? '—'} (desde ${formatearFecha(f.desde)})`,
+    );
+  }
 }
 
 async function completar(numero: string | undefined, args: string[]) {
@@ -222,9 +259,13 @@ async function main() {
       return completar(numero, resto);
     case 'estado':
       return estado(numero, resto[0], resto[1]);
+    case 'seguir':
+      return seguir(numero, resto);
+    case 'seguimientos':
+      return seguimientos();
     default:
       throw new ErrorDeUso(
-        'Comandos: bandeja | ver N/AAAA | completar N/AAAA --... | estado N/AAAA "Estado" ["obs"]',
+        'Comandos: bandeja | ver N/AAAA | completar N/AAAA --... | estado N/AAAA "Estado" ["obs"] | seguir N/AAAA "Dónde" "novedad" [--cerrar] | seguimientos',
       );
   }
 }

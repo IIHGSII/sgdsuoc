@@ -151,6 +151,10 @@ model Expediente {
   /// Cargado con fotos desde el celular y todavía sin completar sus datos (bandeja "Por procesar").
   porProcesar Boolean @default(false) @map("por_procesar")
 
+  /// Seguimiento "fuera de la SUOC": la SUOC ya hizo su parte pero la necesidad
+  /// del hospital sigue abierta en otra dependencia. Null: no se sigue.
+  seguimiento EstadoSeguimiento?
+
   estadoActualId           Int      @map("estado_actual_id")
   fechaUltimaActualizacion DateTime @updatedAt @map("fecha_ultima_actualizacion")
 
@@ -170,12 +174,40 @@ model Expediente {
   salidas      Salida[]
   trazabilidad Trazabilidad[]
   fotos        FotoExpediente[]
+  novedades    NovedadSeguimiento[]
 
   @@unique([nroSuoc, anioSuoc])
   @@index([nroMesaEntrada])
   @@index([nroSimese])
   @@index([porProcesar])
+  @@index([seguimiento])
   @@map("expedientes")
+}
+
+// ---------------------------------------------------------------------------
+// Seguimiento fuera de la SUOC: novedades de un expediente ya derivado
+// ---------------------------------------------------------------------------
+
+enum EstadoSeguimiento {
+  ABIERTO
+  CERRADO
+}
+
+model NovedadSeguimiento {
+  id           Int      @id @default(autoincrement())
+  expedienteId Int      @map("expediente_id")
+  fecha        DateTime
+  /// Dependencia donde está el trámite en ese momento (ej. "DGGIES").
+  dondeEsta    String   @map("donde_esta")
+  detalle      String   @db.Text
+  /// La novedad con la que se cerró el seguimiento (resultado final).
+  cierre       Boolean  @default(false)
+  creadoEn     DateTime @default(now()) @map("creado_en")
+
+  expediente Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+
+  @@index([expedienteId])
+  @@map("novedades_seguimiento")
 }
 
 // ---------------------------------------------------------------------------

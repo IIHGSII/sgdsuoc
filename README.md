@@ -104,7 +104,13 @@ npm run sgd -- ver 137/2026
 npm run sgd -- completar 137/2026 --mesa 1162 --fecha-adm 2026-10-29T14:13 \
   --tipo "Circular" --servicio "Externo" --asunto "..."   # [--fecha-suoc] [--simese] [--monto] [--via]
 npm run sgd -- estado 137/2026 "Archivado" "observaciones"
+npm run sgd -- seguir 137/2026 "DGGIES" "novedad" [--fecha 2026-10-29] [--cerrar]
+npm run sgd -- seguimientos            # seguimientos abiertos, los más tiempo sin novedades primero
 ```
+
+`seguir` lleva el seguimiento "fuera de la SUOC" (también desde el detalle del expediente y la
+página Seguimiento): la primera novedad lo abre y la que lleva `--cerrar` es el resultado final.
+Es independiente del estado del expediente.
 
 `completar` parte de los valores actuales del expediente: lo que no se indica no cambia. Al
 completar los datos obligatorios, el expediente sale de la bandeja.
