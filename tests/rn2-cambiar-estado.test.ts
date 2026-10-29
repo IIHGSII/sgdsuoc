@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { prisma } from './helpers/test-prisma';
 import { crearExpediente } from '@/lib/expedientes';
-import { cambiarEstadoExpediente, EstadoFinalError } from '@/lib/estados';
+import {
+  cambiarEstadoExpediente,
+  CambioEstadoInvalidoError,
+  EstadoFinalError,
+} from '@/lib/estados';
 
 // RN-2: el cambio de estado registra trazabilidad y actualiza estadoActual
 // en la misma transacción, y un expediente en estado final no admite más
@@ -95,5 +99,33 @@ describe('RN-2: cambio de estado', () => {
     const trazas = await prisma.trazabilidad.findMany({ where: { expedienteId: e.id } });
     // ingreso inicial + el cambio a final = 2, ninguno más tras el intento rechazado
     expect(trazas).toHaveLength(2);
+  });
+
+  it('rechaza "cambiar" al mismo estado en que ya está, sin dejar trazabilidad', async () => {
+    const e = await crearExpedienteDePrueba(2086);
+
+    await expect(cambiarEstadoExpediente(e.id, estadoInicialId)).rejects.toThrow(
+      new CambioEstadoInvalidoError('El expediente ya está en ese estado.'),
+    );
+    const trazas = await prisma.trazabilidad.findMany({ where: { expedienteId: e.id } });
+    expect(trazas).toHaveLength(1);
+  });
+
+  it('rechaza un estado inexistente con un error amable, sin dejar trazabilidad', async () => {
+    const e = await crearExpedienteDePrueba(2087);
+
+    await expect(cambiarEstadoExpediente(e.id, 999_999_999)).rejects.toBeInstanceOf(
+      CambioEstadoInvalidoError,
+    );
+    const actualizado = await prisma.expediente.findUniqueOrThrow({ where: { id: e.id } });
+    expect(actualizado.estadoActualId).toBe(estadoInicialId);
+    const trazas = await prisma.trazabilidad.findMany({ where: { expedienteId: e.id } });
+    expect(trazas).toHaveLength(1);
+  });
+
+  it('rechaza un expediente inexistente con un error amable', async () => {
+    await expect(cambiarEstadoExpediente(999_999_999, estadoSiguienteId)).rejects.toBeInstanceOf(
+      CambioEstadoInvalidoError,
+    );
   });
 });

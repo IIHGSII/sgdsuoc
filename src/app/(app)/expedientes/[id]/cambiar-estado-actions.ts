@@ -3,7 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { verifySession } from '@/lib/dal';
-import { cambiarEstadoExpediente, EstadoFinalError } from '@/lib/estados';
+import {
+  cambiarEstadoExpediente,
+  CambioEstadoInvalidoError,
+  EstadoFinalError,
+} from '@/lib/estados';
 
 const CambiarEstadoSchema = z.object({
   expedienteId: z.string().min(1),
@@ -32,6 +36,9 @@ export async function cambiarEstadoAction(
   const expedienteId = Number(validado.data.expedienteId);
   const estadoNuevoId = Number(validado.data.estadoNuevoId);
 
+  if (!Number.isInteger(expedienteId) || expedienteId <= 0) {
+    return { error: 'El expediente no existe.' };
+  }
   if (!Number.isInteger(estadoNuevoId) || estadoNuevoId <= 0) {
     return { error: 'Seleccioná el nuevo estado.' };
   }
@@ -39,7 +46,7 @@ export async function cambiarEstadoAction(
   try {
     await cambiarEstadoExpediente(expedienteId, estadoNuevoId, validado.data.observaciones || null);
   } catch (error) {
-    if (error instanceof EstadoFinalError) {
+    if (error instanceof EstadoFinalError || error instanceof CambioEstadoInvalidoError) {
       return { error: error.message };
     }
     throw error;

@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma';
 
 export class EstadoFinalError extends Error {}
 
+/** Cambio de estado que no corresponde: mismo estado, o expediente/estado inexistente. */
+export class CambioEstadoInvalidoError extends Error {}
+
 /**
  * RN-2: registra el cambio de estado (trazabilidad) y actualiza estadoActual
  * del expediente en la misma transacción. Recibe el cliente de transacción
@@ -16,13 +19,28 @@ export async function cambiarEstado(
   estadoNuevoId: number,
   observaciones?: string | null,
 ) {
-  const expediente = await tx.expediente.findUniqueOrThrow({
+  const expediente = await tx.expediente.findUnique({
     where: { id: expedienteId },
     include: { estadoActual: true },
   });
 
+  if (!expediente) {
+    throw new CambioEstadoInvalidoError('El expediente no existe.');
+  }
+
   if (expediente.estadoActual.esFinal) {
     throw new EstadoFinalError('El expediente está en un estado final y no admite más cambios.');
+  }
+
+  if (estadoNuevoId === expediente.estadoActualId) {
+    throw new CambioEstadoInvalidoError('El expediente ya está en ese estado.');
+  }
+
+  const estadoNuevo = await tx.estado.findUnique({ where: { id: estadoNuevoId } });
+  if (!estadoNuevo) {
+    throw new CambioEstadoInvalidoError(
+      'El estado elegido ya no existe (puede haber sido eliminado). Recargá la página.',
+    );
   }
 
   await tx.trazabilidad.create({

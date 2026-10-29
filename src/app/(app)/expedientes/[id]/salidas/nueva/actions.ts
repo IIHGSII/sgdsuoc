@@ -2,9 +2,11 @@
 
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import { Prisma } from '@/generated/prisma/client';
 import { verifySession } from '@/lib/dal';
 import { crearSalida } from '@/lib/salidas';
 import { leerArchivoPdf, ArchivoInvalidoError } from '@/lib/adjuntos';
+import { CambioEstadoInvalidoError, EstadoFinalError } from '@/lib/estados';
 import { localAUtc } from '@/lib/tz';
 
 const RegistrarSalidaSchema = z.object({
@@ -130,12 +132,21 @@ export async function registrarSalidaAction(
         : null,
     });
   } catch (error) {
-    if (error instanceof ArchivoInvalidoError) {
+    if (
+      error instanceof ArchivoInvalidoError ||
+      error instanceof EstadoFinalError ||
+      error instanceof CambioEstadoInvalidoError
+    ) {
       return conError(error.message);
     }
-    return conError(
-      'No se pudo registrar la salida. El expediente puede estar en un estado final o los datos no son válidos.',
-    );
+    // Clave foránea rota: el expediente o el destino se eliminaron mientras el formulario estaba abierto.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+      return conError(
+        'El expediente o el destino elegido ya no existen. Recargá la página e intentá de nuevo.',
+      );
+    }
+    // Cualquier otro error (ej. la base no responde) va a la pantalla de error, con su código.
+    throw error;
   }
 
   redirect(`/expedientes/${expedienteId}`);

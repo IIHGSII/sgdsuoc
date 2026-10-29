@@ -42,7 +42,7 @@ export default async function NuevaSalidaPage({ params }: { params: Promise<{ id
     <NuevaSalidaForm
       expedienteId={expediente.id}
       destinos={destinos}
-      estados={estados}
+      estados={estados.filter((e) => e.id !== expediente.estadoActualId)}
       firmantesSugeridos={firmantesSugeridos}
       fechaHoyLocal={hoyParaInputDate()}
       puedeCambiarEstado={!expediente.estadoActual.esFinal}

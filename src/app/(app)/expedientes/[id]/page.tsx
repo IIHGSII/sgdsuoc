@@ -150,7 +150,10 @@ export default async function DetalleExpedientePage({
         </Link>
         <CopiarResumenBoton texto={resumenTexto} />
         {!expediente.estadoActual.esFinal && (
-          <CambiarEstadoForm expedienteId={expediente.id} estados={estados} />
+          <CambiarEstadoForm
+            expedienteId={expediente.id}
+            estados={estados.filter((e) => e.id !== expediente.estadoActualId)}
+          />
         )}
       </div>
 

@@ -96,6 +96,25 @@ describe('Adjuntos sin huérfanos', () => {
     expect(await contarAdjuntos('duplicado.pdf')).toBe(0);
   });
 
+  it('con un destino inexistente falla con P2003 y no deja el adjunto', async () => {
+    const e = await crearExpediente(datosBase(new Date('2095-01-01T10:00:00Z')));
+    expedienteIds.push(e.id);
+
+    await expect(
+      crearSalida({
+        expedienteId: e.id,
+        tipo: 'NOTA',
+        fecha: new Date('2095-01-02T10:00:00Z'),
+        destinoId: 999_999_999,
+        nroNota: '1',
+        firmadaPor: 'Prueba',
+        descripcion: 'Prueba',
+        adjunto: pdf('destino.pdf'),
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+    expect(await contarAdjuntos('destino.pdf')).toBe(0);
+  });
+
   it('no deja la salida ni su adjunto si falla el cambio de estado', async () => {
     const e = await crearExpediente(datosBase(new Date('2092-01-01T10:00:00Z')));
     expedienteIds.push(e.id);
