@@ -93,6 +93,29 @@ npm run test
 Cubren RN-1 (numeración automática, reinicio anual, concurrencia), RN-2 (transaccionalidad,
 bloqueo en estado final) y el importador (con un fixture chico en formato dumpdata).
 
+## Comandos para operar el SGD desde la notebook
+
+`scripts/sgd.ts` permite procesar expedientes desde la terminal usando las mismas funciones y
+validaciones que la web. Trabaja sobre la base de `DATABASE_URL` (producción).
+
+```bash
+npm run sgd -- bandeja                 # fotos "Por procesar" → OCR local (no modifica la base)
+npm run sgd -- ver 137/2026
+npm run sgd -- completar 137/2026 --mesa 1162 --fecha-adm 2026-10-29T14:13 \
+  --tipo "Circular" --servicio "Externo" --asunto "..."   # [--fecha-suoc] [--simese] [--monto] [--via]
+npm run sgd -- estado 137/2026 "Archivado" "observaciones"
+```
+
+`completar` parte de los valores actuales del expediente: lo que no se indica no cambia. Al
+completar los datos obligatorios, el expediente sale de la bandeja.
+
+`bandeja` deja las fotos y su texto en `<carpeta de trabajo>\Bandeja\<nro>-<año>\` (por defecto
+`C:\Users\hgs_b\Documents\SUOC 28`, o `SGD_CARPETA_TRABAJO`). El OCR usa
+[Tesseract](https://github.com/UB-Mannheim/tesseract/wiki) (`winget install UB-Mannheim.TesseractOCR`)
+con el modelo de español `spa.traineddata` de
+[tessdata_best](https://github.com/tesseract-ocr/tessdata_best) en `%LOCALAPPDATA%\tessdata`
+(configurables con `TESSERACT_PATH` y `TESSDATA_DIR`).
+
 ## Variables de entorno
 
 Ver `.env.example`. Se documentan ahí a medida que se van necesitando (login, sesión, etc.).

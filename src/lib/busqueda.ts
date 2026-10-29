@@ -27,7 +27,7 @@ export function enteroDeParametro(valor: string | undefined): number | undefined
 }
 
 /** Entiende "N/AA" y "N/AAAA" (ej. "5/25" o "5/2025") como número SUOC + año. */
-function parseNumeroSuoc(texto: string): { nro: number; anio: number } | null {
+export function parseNumeroSuoc(texto: string): { nro: number; anio: number } | null {
   const match = texto.match(/^(\d+)\s*\/\s*(\d{2}|\d{4})$/);
   if (!match) return null;
   const nro = enteroDeParametro(match[1]);
