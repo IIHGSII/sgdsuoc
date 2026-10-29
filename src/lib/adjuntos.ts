@@ -36,11 +36,18 @@ export async function leerArchivoPdf(file: File | null | undefined): Promise<Arc
     );
   }
 
+  const contenido = Buffer.from(await file.arrayBuffer());
+  // El tipo lo declara el navegador (se puede falsear): además se verifica la
+  // firma "%PDF-", que el estándar admite dentro del primer KB del archivo.
+  if (!contenido.subarray(0, 1024).includes('%PDF-')) {
+    throw new ArchivoInvalidoError('El archivo no es un PDF válido.');
+  }
+
   return {
     nombreArchivo: file.name || 'documento.pdf',
     mimeType: file.type,
     tamanioBytes: file.size,
-    contenido: Buffer.from(await file.arrayBuffer()),
+    contenido,
   };
 }
 

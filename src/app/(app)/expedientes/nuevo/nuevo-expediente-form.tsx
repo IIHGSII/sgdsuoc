@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import Link from 'next/link';
 import { ComboboxSelect } from '@/components/combobox-select';
+import { FechasIngreso } from '@/components/fechas-ingreso';
 import { crearExpedienteAction } from './actions';
 
 type Opcion = { id: number; nombre: string };
@@ -37,7 +38,7 @@ export function NuevoExpedienteForm({
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Campo
           label="N° de mesa de entrada"
           name="nroMesaEntrada"
@@ -55,24 +56,12 @@ export function NuevoExpedienteForm({
 
       <Campo label="N° SIMESE (opcional)" name="nroSimese" defaultValue={v?.nroSimese} />
 
-      <div className="grid grid-cols-2 gap-4">
-        <Campo
-          label="Fecha de ingreso al Depto. Administrativo"
-          name="fechaIngresoAdm"
-          type="datetime-local"
-          defaultValue={v?.fechaIngresoAdm ?? fechaHoraActual}
-          required
-        />
-        <Campo
-          label="Fecha de ingreso a la SUOC"
-          name="fechaIngresoSuoc"
-          type="datetime-local"
-          defaultValue={v?.fechaIngresoSuoc ?? fechaHoraActual}
-          required
-        />
-      </div>
+      <FechasIngreso
+        defaultAdm={v?.fechaIngresoAdm ?? fechaHoraActual}
+        defaultSuoc={v?.fechaIngresoSuoc ?? fechaHoraActual}
+      />
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <ComboboxSelect
           name="tipoDocumentoId"
           label="Tipo de documento"

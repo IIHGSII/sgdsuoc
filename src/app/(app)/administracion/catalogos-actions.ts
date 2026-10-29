@@ -110,6 +110,17 @@ export async function eliminarCatalogoAction(formData: FormData) {
 
   if (!esCatalogoValido(catalogo) || !Number.isInteger(id)) volver('Datos inválidos.');
 
+  // La base no lo impide (la vía solo pierde su destino sugerido), pero sería
+  // perder ese dato sin aviso: se pide cambiar la vía primero.
+  if (catalogo === 'destino') {
+    const vias = await prisma.viaResolucion.count({ where: { destinoSugeridoId: id } });
+    if (vias > 0) {
+      volver(
+        'No se puede eliminar: hay vías de resolución que lo tienen como destino sugerido. Cambialas primero.',
+      );
+    }
+  }
+
   try {
     await eliminarDeCatalogo(catalogo, id);
   } catch (error) {

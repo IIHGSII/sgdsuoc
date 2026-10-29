@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { verifySession } from '@/lib/dal';
 import { prisma } from '@/lib/prisma';
 import { diasDesdeIngreso, formatearFechaHora } from '@/lib/tz';
+import { colorAntiguedad } from '@/lib/antiguedad';
+
+const CLASE_COLOR = { verde: 'bg-green-500', amarillo: 'bg-yellow-500', rojo: 'bg-red-500' };
 
 export default async function Home() {
   await verifySession();
@@ -30,13 +33,15 @@ export default async function Home() {
               <li key={exp.id}>
                 <Link
                   href={`/expedientes/${exp.id}`}
-                  className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 text-sm hover:bg-gray-50"
+                  className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-gray-200 bg-white p-4 text-sm hover:bg-gray-50"
                 >
                   <IndicadorAntiguedad dias={dias} />
                   <span className="font-medium text-gray-900">
                     {exp.nroSuoc}/{exp.anioSuoc}
                   </span>
-                  <span className="flex-1 truncate text-gray-700">{exp.asunto}</span>
+                  <span className="min-w-0 flex-1 basis-40 truncate text-gray-700">
+                    {exp.asunto}
+                  </span>
                   <span className="text-gray-500">{exp.servicioOrigen.nombre}</span>
                   <span className="text-gray-500">{exp.estadoActual.nombre}</span>
                   <span className="whitespace-nowrap text-gray-500">
@@ -53,7 +58,7 @@ export default async function Home() {
 }
 
 function IndicadorAntiguedad({ dias }: { dias: number }) {
-  const color = dias < 7 ? 'bg-green-500' : dias <= 15 ? 'bg-yellow-500' : 'bg-red-500';
+  const color = CLASE_COLOR[colorAntiguedad(dias)];
   return (
     <span
       title={`${dias} día(s) desde el ingreso a la SUOC`}

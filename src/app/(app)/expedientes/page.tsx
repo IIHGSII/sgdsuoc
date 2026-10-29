@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { verifySession } from '@/lib/dal';
 import { prisma } from '@/lib/prisma';
 import { formatearFechaHora } from '@/lib/tz';
-import { construirFiltroTexto } from '@/lib/busqueda';
+import { construirFiltroTexto, enteroDeParametro } from '@/lib/busqueda';
 import type { Prisma } from '@/generated/prisma/client';
 
 export default async function ListadoExpedientesPage({
@@ -22,12 +22,13 @@ export default async function ListadoExpedientesPage({
 
   const filtroTexto = q ? construirFiltroTexto(q) : null;
 
+  // Un valor inválido en la URL (ej. "?anio=abc") se ignora en vez de romper la consulta.
   const where: Prisma.ExpedienteWhereInput = {
-    ...(anio ? { anioSuoc: Number(anio) } : {}),
-    ...(estado ? { estadoActualId: Number(estado) } : {}),
-    ...(tipo ? { tipoDocumentoId: Number(tipo) } : {}),
-    ...(servicio ? { servicioOrigenId: Number(servicio) } : {}),
-    ...(viaResolucion ? { viaResolucionId: Number(viaResolucion) } : {}),
+    anioSuoc: enteroDeParametro(anio),
+    estadoActualId: enteroDeParametro(estado),
+    tipoDocumentoId: enteroDeParametro(tipo),
+    servicioOrigenId: enteroDeParametro(servicio),
+    viaResolucionId: enteroDeParametro(viaResolucion),
     ...(filtroTexto ?? {}),
   };
 

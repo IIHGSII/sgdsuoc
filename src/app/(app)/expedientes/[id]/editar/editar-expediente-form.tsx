@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import Link from 'next/link';
 import { ComboboxSelect } from '@/components/combobox-select';
+import { FechasIngreso } from '@/components/fechas-ingreso';
 import { editarExpedienteAction } from './actions';
 
 type Opcion = { id: number; nombre: string };
@@ -66,24 +67,12 @@ export function EditarExpedienteForm({
         defaultValue={v?.nroSimese ?? valoresIniciales.nroSimese}
       />
 
-      <div className="grid grid-cols-2 gap-4">
-        <Campo
-          label="Fecha de ingreso al Depto. Administrativo"
-          name="fechaIngresoAdm"
-          type="datetime-local"
-          defaultValue={v?.fechaIngresoAdm ?? valoresIniciales.fechaIngresoAdm}
-          required
-        />
-        <Campo
-          label="Fecha de ingreso a la SUOC"
-          name="fechaIngresoSuoc"
-          type="datetime-local"
-          defaultValue={v?.fechaIngresoSuoc ?? valoresIniciales.fechaIngresoSuoc}
-          required
-        />
-      </div>
+      <FechasIngreso
+        defaultAdm={v?.fechaIngresoAdm ?? valoresIniciales.fechaIngresoAdm}
+        defaultSuoc={v?.fechaIngresoSuoc ?? valoresIniciales.fechaIngresoSuoc}
+      />
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <ComboboxSelect
           name="tipoDocumentoId"
           label="Tipo de documento"

@@ -11,19 +11,34 @@ export function BuscadorHeader() {
   const [query, setQuery] = useState('');
   const [resultados, setResultados] = useState<Resultado>([]);
   const [abierto, setAbierto] = useState(false);
+  const [fallo, setFallo] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Número de la última búsqueda lanzada: si una respuesta lenta llega después
+  // de otra más nueva, se descarta para no pisar los resultados actuales.
+  const ultimaBusquedaRef = useRef(0);
 
   useEffect(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
+      const busqueda = ++ultimaBusquedaRef.current;
       if (!query.trim()) {
         setResultados([]);
+        setFallo(false);
         return;
       }
-      buscarAction(query).then((r) => {
-        setResultados(r);
-        setAbierto(true);
-      });
+      buscarAction(query)
+        .then((r) => {
+          if (busqueda !== ultimaBusquedaRef.current) return;
+          setResultados(r);
+          setFallo(false);
+          setAbierto(true);
+        })
+        .catch(() => {
+          if (busqueda !== ultimaBusquedaRef.current) return;
+          setResultados([]);
+          setFallo(true);
+          setAbierto(true);
+        });
     }, 250);
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -43,7 +58,14 @@ export function BuscadorHeader() {
       />
       {abierto && query.trim() && (
         <ul className="absolute z-20 mt-1 max-h-80 w-full overflow-auto rounded-md border border-gray-200 bg-white text-sm shadow-lg">
-          {resultados.length === 0 && <li className="px-3 py-2 text-gray-500">Sin resultados.</li>}
+          {fallo && (
+            <li className="px-3 py-2 text-red-600">
+              No se pudo buscar. Revisá la conexión y probá de nuevo.
+            </li>
+          )}
+          {!fallo && resultados.length === 0 && (
+            <li className="px-3 py-2 text-gray-500">Sin resultados.</li>
+          )}
           {resultados.map((r) => (
             <li key={r.id}>
               <button

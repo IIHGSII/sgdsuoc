@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { verifySession } from '@/lib/dal';
 import { prisma } from '@/lib/prisma';
 import { calcularReporteProductividad, formatearDuracion } from '@/lib/reporte';
+import { enteroDeParametro } from '@/lib/busqueda';
 
 export default async function ReportePage({
   searchParams,
@@ -10,7 +11,7 @@ export default async function ReportePage({
 }) {
   await verifySession();
   const { anio: anioTexto } = await searchParams;
-  const anio = anioTexto ? Number(anioTexto) : undefined;
+  const anio = enteroDeParametro(anioTexto);
 
   const [{ filas, estados }, anios] = await Promise.all([
     calcularReporteProductividad(anio),

@@ -27,7 +27,7 @@ model Usuario {
 }
 
 // ---------------------------------------------------------------------------
-// Catálogos (editables desde Administración, nunca se borran físicamente)
+// Catálogos (editables desde Administración; solo se pueden borrar si nada los usa)
 // ---------------------------------------------------------------------------
 
 model Estado {

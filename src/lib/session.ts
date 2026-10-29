@@ -3,7 +3,8 @@ import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify } from 'jose';
 
 const COOKIE_NAME = 'sgd_session';
-const DURACION_SESION_MS = 30 * 24 * 60 * 60 * 1000; // 30 días
+// 30 días desde el login (no se renueva con el uso): después hay que volver a loguearse.
+const DURACION_SESION_MS = 30 * 24 * 60 * 60 * 1000;
 
 type SessionPayload = {
   userId: number;
@@ -51,16 +52,6 @@ export async function createSession(userId: number, sessionVersion: number) {
     expires: expiresAt,
     path: '/',
   });
-}
-
-/** Renueva la expiración de la sesión activa (ventana deslizante de 30 días). */
-export async function refreshSession() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  const session = await decryptSession(token);
-  if (!session) return;
-
-  await createSession(session.userId, session.sessionVersion);
 }
 
 export async function getSessionCookie() {

@@ -97,7 +97,7 @@ export default async function DetalleExpedientePage({
         </Link>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 rounded-lg border border-gray-200 bg-white p-6 text-sm">
+      <dl className="grid grid-cols-1 gap-x-6 sm:grid-cols-2 gap-y-4 rounded-lg border border-gray-200 bg-white p-6 text-sm">
         <Campo etiqueta="N° de mesa de entrada" valor={expediente.nroMesaEntrada} />
         <Campo etiqueta="N° SIMESE" valor={expediente.nroSimese ?? '—'} />
         <Campo
@@ -119,10 +119,10 @@ export default async function DetalleExpedientePage({
           etiqueta="Vía de resolución prevista"
           valor={expediente.viaResolucion?.nombre ?? '—'}
         />
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Campo etiqueta="Asunto" valor={expediente.asunto} multilinea />
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">Adjunto</dt>
           <dd className="mt-1">
             {expediente.adjunto ? (
@@ -212,7 +212,7 @@ export default async function DetalleExpedientePage({
 
       <div className="mt-6">
         <h2 className="mb-2 text-sm font-semibold text-gray-900">Historial de trazabilidad</h2>
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gray-50">
               <tr>

@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import readline from 'node:readline';
 import bcrypt from 'bcryptjs';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { PrismaClient } from '../src/generated/prisma/client';
@@ -7,7 +8,9 @@ import { PrismaClient } from '../src/generated/prisma/client';
 // No hay pantalla de alta de usuario: se conecta directo a la base (igual que las
 // migraciones), sin necesitar SSH al servidor.
 //
-// Uso: npm run create-user -- --usuario admin --password "una-contraseña-fuerte" [--force]
+// Uso: npm run create-user -- --usuario admin [--force]
+// La contraseña se pide por teclado sin mostrarla (no va en el comando, para
+// que no quede guardada en el historial de la terminal).
 
 function leerArgumento(nombre: string): string | undefined {
   const bandera = `--${nombre}`;
@@ -16,20 +19,37 @@ function leerArgumento(nombre: string): string | undefined {
   return process.argv[index + 1];
 }
 
+async function preguntarOculto(pregunta: string): Promise<string> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    terminal: true,
+  });
+  process.stdout.write(pregunta);
+  // Silencia el eco: lo que se tipea no aparece en pantalla.
+  (rl as unknown as { _writeToOutput: (texto: string) => void })._writeToOutput = () => {};
+  const respuesta = await new Promise<string>((resolve) => rl.question('', resolve));
+  rl.close();
+  process.stdout.write('\n');
+  return respuesta;
+}
+
 async function main() {
   const usuario = leerArgumento('usuario');
-  const password = leerArgumento('password');
   const force = process.argv.includes('--force');
 
-  if (!usuario || !password) {
-    console.error(
-      'Uso: npm run create-user -- --usuario <usuario> --password <contraseña> [--force]',
-    );
+  if (!usuario) {
+    console.error('Uso: npm run create-user -- --usuario <usuario> [--force]');
     process.exit(1);
   }
 
+  const password = await preguntarOculto('Contraseña: ');
   if (password.length < 8) {
     console.error('La contraseña debe tener al menos 8 caracteres.');
+    process.exit(1);
+  }
+  if ((await preguntarOculto('Repetir contraseña: ')) !== password) {
+    console.error('Las contraseñas no coinciden.');
     process.exit(1);
   }
 

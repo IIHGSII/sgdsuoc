@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { prisma } from './helpers/test-prisma';
-import { cabeceraContentDisposition, type ArchivoPdf } from '@/lib/adjuntos';
+import {
+  ArchivoInvalidoError,
+  cabeceraContentDisposition,
+  leerArchivoPdf,
+  type ArchivoPdf,
+} from '@/lib/adjuntos';
 import { crearExpediente, editarExpediente, NumeroSuocDuplicadoError } from '@/lib/expedientes';
 import { crearSalida } from '@/lib/salidas';
 import { EstadoFinalError } from '@/lib/estados';
@@ -35,6 +40,20 @@ describe('Content-Disposition de los adjuntos', () => {
       expect(decodeURIComponent(utf8)).toBe(nombre);
     },
   );
+});
+
+describe('Validación de PDFs subidos', () => {
+  it('acepta un PDF real y rechaza un archivo que solo dice ser PDF', async () => {
+    const real = new File(['%PDF-1.7\n...'], 'nota.pdf', { type: 'application/pdf' });
+    expect((await leerArchivoPdf(real))?.nombreArchivo).toBe('nota.pdf');
+
+    const falso = new File(['<html>no soy un pdf</html>'], 'nota.pdf', {
+      type: 'application/pdf',
+    });
+    await expect(leerArchivoPdf(falso)).rejects.toThrow(
+      new ArchivoInvalidoError('El archivo no es un PDF válido.'),
+    );
+  });
 });
 
 describe('Adjuntos sin huérfanos', () => {

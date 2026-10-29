@@ -12,11 +12,25 @@ export type ResultadoBusqueda = {
 
 const LIMITE_DEFECTO = 10;
 
+const MAX_INT_MYSQL = 2_147_483_647;
+
+/**
+ * Convierte texto (ej. un parámetro de la URL) a un entero positivo que entre
+ * en una columna INT; si no lo es, devuelve undefined. Así un "?anio=abc" o un
+ * número gigante se ignoran en vez de hacer fallar la consulta.
+ */
+export function enteroDeParametro(valor: string | undefined): number | undefined {
+  if (!valor) return undefined;
+  const n = Number(valor);
+  return Number.isInteger(n) && n > 0 && n <= MAX_INT_MYSQL ? n : undefined;
+}
+
 /** Entiende "N/AA" y "N/AAAA" (ej. "5/25" o "5/2025") como número SUOC + año. */
 function parseNumeroSuoc(texto: string): { nro: number; anio: number } | null {
   const match = texto.match(/^(\d+)\s*\/\s*(\d{2}|\d{4})$/);
   if (!match) return null;
-  const nro = Number(match[1]);
+  const nro = enteroDeParametro(match[1]);
+  if (nro === undefined) return null;
   const anioTexto = match[2];
   const anio = anioTexto.length === 2 ? 2000 + Number(anioTexto) : Number(anioTexto);
   return { nro, anio };
@@ -36,8 +50,7 @@ export function construirFiltroTexto(query: string): Prisma.ExpedienteWhereInput
     return { nroSuoc: numeroSuoc.nro, anioSuoc: numeroSuoc.anio };
   }
 
-  const comoNumero = Number(texto);
-  const esEnteroPuro = Number.isInteger(comoNumero);
+  const comoNumero = enteroDeParametro(texto);
 
   return {
     OR: [
@@ -45,7 +58,7 @@ export function construirFiltroTexto(query: string): Prisma.ExpedienteWhereInput
       { nroSimese: { contains: texto } },
       { asunto: { contains: texto } },
       { salidas: { some: { descripcion: { contains: texto } } } },
-      ...(esEnteroPuro ? [{ nroSuoc: comoNumero }] : []),
+      ...(comoNumero !== undefined ? [{ nroSuoc: comoNumero }] : []),
     ],
   };
 }

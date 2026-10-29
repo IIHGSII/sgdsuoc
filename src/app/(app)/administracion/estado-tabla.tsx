@@ -6,7 +6,7 @@ export function EstadoTabla({ items }: { items: Estado[] }) {
   return (
     <section>
       <h2 className="mb-2 text-sm font-semibold text-gray-900">Estados</h2>
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>
