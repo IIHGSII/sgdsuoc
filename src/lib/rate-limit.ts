@@ -15,7 +15,7 @@ function limpiarExpirados(ahora: number) {
   }
 }
 
-/** Devuelve true si la clave (ej. IP) todavía puede intentar loguearse. */
+/** Devuelve true si la clave (el usuario) todavía puede intentar loguearse. */
 export function puedeIntentarLogin(clave: string): boolean {
   const ahora = Date.now();
   limpiarExpirados(ahora);

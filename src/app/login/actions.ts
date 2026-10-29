@@ -1,6 +1,5 @@
 'use server';
 
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
@@ -15,11 +14,6 @@ const LoginSchema = z.object({
 
 export type LoginState = { error?: string } | undefined;
 
-async function obtenerIpCliente() {
-  const headersList = await headers();
-  return headersList.get('x-forwarded-for')?.split(',')[0].trim() ?? 'desconocida';
-}
-
 export async function login(_prevState: LoginState, formData: FormData): Promise<LoginState> {
   const validado = LoginSchema.safeParse({
     usuario: formData.get('usuario'),
@@ -30,13 +24,20 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
     return { error: 'Completá usuario y contraseña.' };
   }
 
-  const ip = await obtenerIpCliente();
+  const { usuario, password } = validado.data;
 
-  if (!puedeIntentarLogin(ip)) {
+  // El límite de intentos va por usuario, no por IP: la IP sale de
+  // x-forwarded-for, que quien hace el pedido puede inventar para saltárselo.
+  // Sin tildes y en minúsculas porque la búsqueda del usuario en MySQL
+  // (utf8mb4_unicode_ci) no distingue ni unas ni otras.
+  const clave = usuario
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  if (!puedeIntentarLogin(clave)) {
     return { error: 'Demasiados intentos fallidos. Esperá unos minutos y volvé a intentar.' };
   }
-
-  const { usuario, password } = validado.data;
 
   const registro = await prisma.usuario.findUnique({ where: { usuario } });
 
@@ -45,11 +46,11 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
     : await bcrypt.compare(password, '$2b$10$invalidoinvalidoinvalidoinvalidoinvalidoinvalidoinva');
 
   if (!registro || !contraseñaValida) {
-    registrarIntentoFallido(ip);
+    registrarIntentoFallido(clave);
     return { error: 'Usuario o contraseña incorrectos.' };
   }
 
-  limpiarIntentos(ip);
+  limpiarIntentos(clave);
   await createSession(registro.id, registro.sessionVersion);
   redirect('/');
 }
