@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { verifySession } from '@/lib/dal';
 import { crearExpediente, NumeroSuocDuplicadoError } from '@/lib/expedientes';
-import { crearAdjuntoDesdeArchivo, ArchivoInvalidoError } from '@/lib/adjuntos';
+import { leerArchivoPdf, ArchivoInvalidoError } from '@/lib/adjuntos';
 import { localAUtc } from '@/lib/tz';
 
 const CrearExpedienteSchema = z.object({
@@ -114,7 +114,7 @@ export async function crearExpedienteAction(
 
   let expedienteId: number;
   try {
-    const adjuntoId = await crearAdjuntoDesdeArchivo(archivo instanceof File ? archivo : null);
+    const adjunto = await leerArchivoPdf(archivo instanceof File ? archivo : null);
 
     const expediente = await crearExpediente({
       nroMesaEntrada: datos.nroMesaEntrada,
@@ -126,7 +126,7 @@ export async function crearExpedienteAction(
       servicioOrigenId,
       asunto: datos.asunto,
       montoEstimado,
-      adjuntoId,
+      adjunto,
       viaResolucionId,
     });
     expedienteId = expediente.id;

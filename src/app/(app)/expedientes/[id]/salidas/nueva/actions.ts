@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { verifySession } from '@/lib/dal';
 import { crearSalida } from '@/lib/salidas';
-import { crearAdjuntoDesdeArchivo, ArchivoInvalidoError } from '@/lib/adjuntos';
+import { leerArchivoPdf, ArchivoInvalidoError } from '@/lib/adjuntos';
 import { localAUtc } from '@/lib/tz';
 
 const RegistrarSalidaSchema = z.object({
@@ -113,7 +113,7 @@ export async function registrarSalidaAction(
   const archivo = formData.get('adjunto');
 
   try {
-    const adjuntoId = await crearAdjuntoDesdeArchivo(archivo instanceof File ? archivo : null);
+    const adjunto = await leerArchivoPdf(archivo instanceof File ? archivo : null);
 
     await crearSalida({
       expedienteId,
@@ -124,7 +124,7 @@ export async function registrarSalidaAction(
       firmadaPor: datos.tipo === 'NOTA' ? datos.firmadaPor : null,
       referencia: datos.tipo === 'PORTAL' ? datos.referencia : null,
       descripcion: datos.descripcion,
-      adjuntoId,
+      adjunto,
       cambiarEstado: estadoNuevoId
         ? { estadoNuevoId, observaciones: datos.observacionesEstado || null }
         : null,

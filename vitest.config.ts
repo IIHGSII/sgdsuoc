@@ -7,10 +7,9 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     testTimeout: 20000,
     hookTimeout: 20000,
-    // Los tests pegan contra la base real compartida (no hay DB de test
-    // separada) y algunos dependen de estado global de catálogos (ej. "el
-    // estado de menor orden"); correr los archivos en paralelo generaría
-    // condiciones de carrera entre ellos.
+    // Los tests comparten la base de pruebas (DATABASE_URL_TEST) y algunos
+    // dependen de estado global de catálogos (ej. "el estado de menor orden");
+    // correr los archivos en paralelo generaría condiciones de carrera entre ellos.
     fileParallelism: false,
   },
   resolve: {

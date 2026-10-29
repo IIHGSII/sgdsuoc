@@ -94,7 +94,8 @@ export default async function AdministracionPage({
       <section>
         <h2 className="mb-2 text-sm font-semibold text-gray-900">Respaldo</h2>
         <p className="mb-2 text-sm text-gray-500">
-          Descarga toda la base (catálogos, expedientes, salidas y trazabilidad) en un archivo JSON.
+          Descarga toda la base (catálogos, vías de resolución, expedientes, salidas, trazabilidad y
+          adjuntos) en un archivo JSON.
         </p>
         <Link
           href="/administracion/respaldo"

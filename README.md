@@ -68,11 +68,17 @@ npm run import
 
 ## Tests
 
-Los tests (Vitest) corren contra la misma base real de Hostinger — no hay una base de datos
-de test separada. Usan catálogos con nombres `TEST_...` y años lejanos (2077+) para no
-mezclarse con datos reales, y limpian todo lo que crean en `afterAll`:
+Los tests (Vitest) corren contra una **base de pruebas separada**, definida en
+`DATABASE_URL_TEST` (ver `.env.example`). Nunca contra la de producción: si esa variable falta,
+o si es igual a `DATABASE_URL`, los tests se niegan a correr. Usan catálogos con nombres
+`TEST_...` y años lejanos (2077+), y limpian todo lo que crean en `afterAll`.
+
+La base de pruebas es una segunda base MySQL de Hostinger (hPanel → Bases de datos), con
+acceso remoto habilitado igual que la de producción. Una vez creada, y después de agregar
+migraciones nuevas, aplicarle el esquema:
 
 ```bash
+npm run test:migrate
 npm run test
 ```
 
@@ -99,8 +105,8 @@ Ver `.env.example`. Se documentan ahí a medida que se van necesitando (login, s
 
 ## Restaurar un respaldo
 
-El botón de respaldo en Administración descarga un JSON con catálogos, expedientes, salidas,
-trazabilidad y adjuntos (sin usuarios). No hay una pantalla de restauración automática; para
+El botón de respaldo en Administración descarga un JSON con catálogos, vías de resolución,
+expedientes, salidas, trazabilidad y adjuntos (sin usuarios). No hay una pantalla de restauración automática; para
 restaurar, cargar los datos manualmente contra la base (por ejemplo con un script chico que
 lea el JSON y haga upsert por los mismos campos que usa `scripts/import-datos.ts`), o pedir
 soporte para restaurarlo si es necesario.

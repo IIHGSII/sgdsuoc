@@ -13,6 +13,7 @@ export async function GET() {
     tiposDocumento,
     servicios,
     destinos,
+    viasResolucion,
     expedientes,
     salidas,
     trazabilidad,
@@ -22,6 +23,7 @@ export async function GET() {
     prisma.tipoDocumento.findMany({ orderBy: { id: 'asc' } }),
     prisma.servicio.findMany({ orderBy: { id: 'asc' } }),
     prisma.destino.findMany({ orderBy: { id: 'asc' } }),
+    prisma.viaResolucion.findMany({ orderBy: { id: 'asc' } }),
     prisma.expediente.findMany({ orderBy: { id: 'asc' } }),
     prisma.salida.findMany({ orderBy: { id: 'asc' } }),
     prisma.trazabilidad.findMany({ orderBy: { id: 'asc' } }),
@@ -34,6 +36,7 @@ export async function GET() {
     tiposDocumento,
     servicios,
     destinos,
+    viasResolucion,
     expedientes: expedientes.map((e) => ({
       ...e,
       montoEstimado: e.montoEstimado?.toString() ?? null,

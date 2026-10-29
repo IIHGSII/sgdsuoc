@@ -3,8 +3,8 @@
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { verifySession } from '@/lib/dal';
-import { editarExpediente } from '@/lib/expedientes';
-import { crearAdjuntoDesdeArchivo, ArchivoInvalidoError } from '@/lib/adjuntos';
+import { editarExpediente, FechaIngresoInvalidaError } from '@/lib/expedientes';
+import { leerArchivoPdf, ArchivoInvalidoError, type ArchivoPdf } from '@/lib/adjuntos';
 import { localAUtc } from '@/lib/tz';
 
 const EditarExpedienteSchema = z.object({
@@ -116,9 +116,9 @@ export async function editarExpedienteAction(
   }
 
   const archivo = formData.get('adjunto');
-  let nuevoAdjuntoId: number | null;
+  let nuevoAdjunto: ArchivoPdf | null;
   try {
-    nuevoAdjuntoId = await crearAdjuntoDesdeArchivo(archivo instanceof File ? archivo : null);
+    nuevoAdjunto = await leerArchivoPdf(archivo instanceof File ? archivo : null);
   } catch (error) {
     if (error instanceof ArchivoInvalidoError) {
       return conError(error.message);
@@ -126,18 +126,25 @@ export async function editarExpedienteAction(
     throw error;
   }
 
-  await editarExpediente(expedienteId, {
-    nroMesaEntrada: datos.nroMesaEntrada,
-    nroSimese: datos.nroSimese || null,
-    fechaIngresoAdm,
-    fechaIngresoSuoc,
-    tipoDocumentoId,
-    servicioOrigenId,
-    asunto: datos.asunto,
-    montoEstimado,
-    viaResolucionId,
-    nuevoAdjuntoId,
-  });
+  try {
+    await editarExpediente(expedienteId, {
+      nroMesaEntrada: datos.nroMesaEntrada,
+      nroSimese: datos.nroSimese || null,
+      fechaIngresoAdm,
+      fechaIngresoSuoc,
+      tipoDocumentoId,
+      servicioOrigenId,
+      asunto: datos.asunto,
+      montoEstimado,
+      viaResolucionId,
+      nuevoAdjunto,
+    });
+  } catch (error) {
+    if (error instanceof FechaIngresoInvalidaError) {
+      return conError(error.message);
+    }
+    throw error;
+  }
 
   redirect(`/expedientes/${expedienteId}`);
 }

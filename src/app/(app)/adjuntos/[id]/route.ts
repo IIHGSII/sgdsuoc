@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifySession } from '@/lib/dal';
 import { prisma } from '@/lib/prisma';
+import { cabeceraContentDisposition } from '@/lib/adjuntos';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   await verifySession();
@@ -19,7 +20,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   return new NextResponse(Buffer.from(adjunto.contenido), {
     headers: {
       'Content-Type': adjunto.mimeType,
-      'Content-Disposition': `inline; filename="${adjunto.nombreArchivo}"`,
+      'Content-Disposition': cabeceraContentDisposition(adjunto.nombreArchivo),
       'Content-Length': String(adjunto.tamanioBytes),
     },
   });
