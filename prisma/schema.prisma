@@ -270,3 +270,19 @@ model Trazabilidad {
   @@index([expedienteId])
   @@map("trazabilidad")
 }
+
+// ---------------------------------------------------------------------------
+// Presupuesto aprobado del hospital (PGN), por objeto de gasto y fuente
+// ---------------------------------------------------------------------------
+
+model PartidaPresupuesto {
+  id          Int     @id @default(autoincrement())
+  anio        Int
+  objetoGasto Int     @map("objeto_gasto")
+  fuente      Int
+  descripcion String
+  aprobado    Decimal @db.Decimal(15, 2)
+
+  @@unique([anio, objetoGasto, fuente])
+  @@map("partidas_presupuesto")
+}
