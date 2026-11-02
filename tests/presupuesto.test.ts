@@ -22,4 +22,17 @@ describe('Presupuesto aprobado', () => {
     expect(presupuesto?.total).toBe(2475198397);
     expect(presupuesto?.grupos.map((g) => g.aprobado)).toEqual([1147548516, 1327649881]);
   });
+
+  it('el rubro 245 coincide con los totales del Informe de Débitos de Sistework', async () => {
+    const presupuesto = await obtenerPresupuesto();
+    const partidas = presupuesto!.grupos.flatMap((g) => g.subgrupos.flatMap((s) => s.partidas));
+    const ejecucion = partidas.find((p) => p.objetoGasto === 245)?.ejecucion;
+    expect(ejecucion?.planFinanciero).toBe(884236454);
+    expect(ejecucion?.prevision).toBe(884236454);
+    expect(ejecucion?.compromiso).toBe(884236454);
+    expect(ejecucion?.saldoPlan).toBe(0);
+    expect(ejecucion?.aprobadoSinPlan).toBe(263312062);
+    expect(ejecucion?.debitos).toHaveLength(4);
+    expect(partidas.find((p) => p.objetoGasto === 311)?.ejecucion).toBeUndefined();
+  });
 });

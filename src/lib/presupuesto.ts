@@ -14,12 +14,52 @@ const NOMBRES: Record<number, string> = {
   340: 'Bienes de consumo de oficinas e insumos',
 };
 
+export type Debito = {
+  cdp: number;
+  codigoContratacion: string | null;
+  concepto: string;
+  tipo: string;
+  prevision: number;
+  compromiso: number;
+};
+
+/** Lo que informa Sistework sobre un rubro, a la fecha del informe. */
+export type Ejecucion = {
+  fechaInforme: Date;
+  planFinanciero: number;
+  prevision: number;
+  compromiso: number;
+  saldoPlan: number;
+  aprobadoSinPlan: number;
+  debitos: Debito[];
+};
+
 export type Partida = {
   objetoGasto: number;
   fuente: number;
   descripcion: string;
   aprobado: number;
+  ejecucion?: Ejecucion;
 };
+
+export function calcularEjecucion(
+  aprobado: number,
+  planFinanciero: number,
+  fechaInforme: Date,
+  debitos: Debito[],
+): Ejecucion {
+  const prevision = debitos.reduce((suma, d) => suma + d.prevision, 0);
+  const compromiso = debitos.reduce((suma, d) => suma + d.compromiso, 0);
+  return {
+    fechaInforme,
+    planFinanciero,
+    prevision,
+    compromiso,
+    saldoPlan: planFinanciero - prevision,
+    aprobadoSinPlan: aprobado - planFinanciero,
+    debitos,
+  };
+}
 
 export type Subgrupo = { codigo: number; nombre: string; aprobado: number; partidas: Partida[] };
 export type Grupo = { codigo: number; nombre: string; aprobado: number; subgrupos: Subgrupo[] };
@@ -65,13 +105,32 @@ export async function obtenerPresupuesto() {
   const ultimo = await prisma.partidaPresupuesto.aggregate({ _max: { anio: true } });
   const anio = ultimo._max.anio;
   if (anio === null) return null;
-  const filas = await prisma.partidaPresupuesto.findMany({ where: { anio } });
+  const filas = await prisma.partidaPresupuesto.findMany({
+    where: { anio },
+    include: { debitos: { orderBy: { id: 'asc' } } },
+  });
   const grupos = agruparPartidas(
     filas.map((f) => ({
       objetoGasto: f.objetoGasto,
       fuente: f.fuente,
       descripcion: f.descripcion,
       aprobado: Number(f.aprobado),
+      ejecucion:
+        f.planFinanciero !== null && f.fechaInforme !== null
+          ? calcularEjecucion(
+              Number(f.aprobado),
+              Number(f.planFinanciero),
+              f.fechaInforme,
+              f.debitos.map((d) => ({
+                cdp: d.cdp,
+                codigoContratacion: d.codigoContratacion,
+                concepto: d.concepto,
+                tipo: d.tipo,
+                prevision: Number(d.prevision),
+                compromiso: Number(d.compromiso),
+              })),
+            )
+          : undefined,
     })),
   );
   return { anio, grupos, total: grupos.reduce((suma, g) => suma + g.aprobado, 0) };

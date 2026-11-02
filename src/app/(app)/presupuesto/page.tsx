@@ -23,6 +23,9 @@ export default async function PresupuestoPage() {
   }
 
   const { anio, grupos, total } = presupuesto;
+  const conEjecucion = grupos
+    .flatMap((g) => g.subgrupos.flatMap((s) => s.partidas))
+    .filter((p) => p.ejecucion);
 
   const tarjetas = [
     { titulo: 'Total aprobado', monto: total, detalle: 'Actividad 23 · Unidad Responsable 41' },
@@ -52,6 +55,75 @@ export default async function PresupuestoPage() {
       </div>
 
       <div className="space-y-4">
+        {conEjecucion.map((p) => {
+          const e = p.ejecucion!;
+          const cifras = [
+            { titulo: 'Aprobado', monto: p.aprobado },
+            { titulo: 'Plan financiero', monto: e.planFinanciero },
+            { titulo: 'Comprometido', monto: e.compromiso },
+            { titulo: 'Saldo del plan', monto: e.saldoPlan },
+            { titulo: 'Aprobado sin plan financiero', monto: e.aprobadoSinPlan },
+          ];
+          return (
+            <section key={p.objetoGasto} className="rounded-lg border border-gray-200 bg-white p-4">
+              <h2 className="font-semibold text-gray-900">
+                {p.objetoGasto} · {p.descripcion}
+              </h2>
+              <p className="text-xs text-gray-500">
+                F.F. {p.fuente} · Informe de Débitos de Sistework al{' '}
+                {e.fechaInforme.toLocaleDateString('es-PY', { timeZone: 'UTC' })}
+              </p>
+
+              <dl className="mt-3 grid gap-3 sm:grid-cols-3">
+                {cifras.map((c) => (
+                  <div key={c.titulo}>
+                    <dt className="text-xs text-gray-500">{c.titulo}</dt>
+                    <dd className="text-sm font-semibold whitespace-nowrap text-gray-900">
+                      {formatearMonto(c.monto)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-left text-xs text-gray-500">
+                    <tr>
+                      <th className="py-1 pr-2 font-medium">CDP</th>
+                      <th className="px-2 py-1 font-medium">Concepto</th>
+                      <th className="px-2 py-1 font-medium">Tipo</th>
+                      <th className="px-2 py-1 text-right font-medium">Previsión</th>
+                      <th className="py-1 pl-2 text-right font-medium">Compromiso</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-700">
+                    {e.debitos.map((d) => (
+                      <tr key={d.cdp} className="border-t border-gray-200 align-top">
+                        <td className="py-1 pr-2">{d.cdp}</td>
+                        <td className="min-w-52 px-2 py-1">
+                          {d.concepto}
+                          {d.codigoContratacion && (
+                            <span className="block text-xs text-gray-500">
+                              {d.codigoContratacion}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-2 py-1">{d.tipo}</td>
+                        <td className="px-2 py-1 text-right whitespace-nowrap">
+                          {formatearMonto(d.prevision)}
+                        </td>
+                        <td className="py-1 pl-2 text-right whitespace-nowrap">
+                          {formatearMonto(d.compromiso)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          );
+        })}
+
         {grupos.map((grupo) => (
           <section key={grupo.codigo} className="rounded-lg border border-gray-200 bg-white p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4">

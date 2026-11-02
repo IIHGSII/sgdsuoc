@@ -276,13 +276,32 @@ model Trazabilidad {
 // ---------------------------------------------------------------------------
 
 model PartidaPresupuesto {
-  id          Int     @id @default(autoincrement())
-  anio        Int
-  objetoGasto Int     @map("objeto_gasto")
-  fuente      Int
-  descripcion String
-  aprobado    Decimal @db.Decimal(15, 2)
+  id             Int                 @id @default(autoincrement())
+  anio           Int
+  objetoGasto    Int                 @map("objeto_gasto")
+  fuente         Int
+  descripcion    String
+  aprobado       Decimal             @db.Decimal(15, 2)
+  // Datos del Informe de Débitos de Sistework, a la fecha del informe.
+  planFinanciero Decimal?            @map("plan_financiero") @db.Decimal(15, 2)
+  fechaInforme   DateTime?           @map("fecha_informe") @db.Date
+  debitos        DebitoPresupuesto[]
 
   @@unique([anio, objetoGasto, fuente])
   @@map("partidas_presupuesto")
+}
+
+model DebitoPresupuesto {
+  id                 Int                @id @default(autoincrement())
+  partidaId          Int                @map("partida_id")
+  partida            PartidaPresupuesto @relation(fields: [partidaId], references: [id])
+  cdp                Int
+  codigoContratacion String?            @map("codigo_contratacion")
+  concepto           String
+  tipo               String
+  prevision          Decimal            @db.Decimal(15, 2)
+  compromiso         Decimal            @db.Decimal(15, 2)
+
+  @@unique([partidaId, cdp])
+  @@map("debitos_presupuesto")
 }
