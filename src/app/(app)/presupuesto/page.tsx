@@ -85,41 +85,46 @@ export default async function PresupuestoPage() {
                 ))}
               </dl>
 
-              <div className="mt-3 overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="text-left text-xs text-gray-500">
-                    <tr>
-                      <th className="py-1 pr-2 font-medium">CDP</th>
-                      <th className="px-2 py-1 font-medium">Concepto</th>
-                      <th className="px-2 py-1 font-medium">Tipo</th>
-                      <th className="px-2 py-1 text-right font-medium">Previsión</th>
-                      <th className="py-1 pl-2 text-right font-medium">Compromiso</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-gray-700">
-                    {e.debitos.map((d) => (
-                      <tr key={d.cdp} className="border-t border-gray-200 align-top">
-                        <td className="py-1 pr-2">{d.cdp}</td>
-                        <td className="min-w-52 px-2 py-1">
-                          {d.concepto}
-                          {d.codigoContratacion && (
-                            <span className="block text-xs text-gray-500">
-                              {d.codigoContratacion}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-2 py-1">{d.tipo}</td>
-                        <td className="px-2 py-1 text-right whitespace-nowrap">
-                          {formatearMonto(d.prevision)}
-                        </td>
-                        <td className="py-1 pl-2 text-right whitespace-nowrap">
-                          {formatearMonto(d.compromiso)}
-                        </td>
+              <details className="mt-3">
+                <summary className="cursor-pointer text-sm font-medium text-blue-700">
+                  Ver los {e.debitos.length} CDP
+                </summary>
+                <div className="mt-2 overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="text-left text-xs text-gray-500">
+                      <tr>
+                        <th className="py-1 pr-2 font-medium">CDP</th>
+                        <th className="px-2 py-1 font-medium">Concepto</th>
+                        <th className="px-2 py-1 font-medium">Tipo</th>
+                        <th className="px-2 py-1 text-right font-medium">Previsión</th>
+                        <th className="py-1 pl-2 text-right font-medium">Compromiso</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="text-gray-700">
+                      {e.debitos.map((d) => (
+                        <tr key={d.cdp} className="border-t border-gray-200 align-top">
+                          <td className="py-1 pr-2">{d.cdp}</td>
+                          <td className="min-w-52 px-2 py-1">
+                            {d.concepto}
+                            {d.codigoContratacion && (
+                              <span className="block text-xs text-gray-500">
+                                {d.codigoContratacion}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-2 py-1">{d.tipo}</td>
+                          <td className="px-2 py-1 text-right whitespace-nowrap">
+                            {formatearMonto(d.prevision)}
+                          </td>
+                          <td className="py-1 pl-2 text-right whitespace-nowrap">
+                            {formatearMonto(d.compromiso)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
             </section>
           );
         })}

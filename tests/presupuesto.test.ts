@@ -33,6 +33,22 @@ describe('Presupuesto aprobado', () => {
     expect(ejecucion?.saldoPlan).toBe(0);
     expect(ejecucion?.aprobadoSinPlan).toBe(263312062);
     expect(ejecucion?.debitos).toHaveLength(4);
-    expect(partidas.find((p) => p.objetoGasto === 311)?.ejecucion).toBeUndefined();
+    expect(partidas.find((p) => p.objetoGasto === 321)?.ejecucion).toBeUndefined();
+  });
+
+  it('el rubro 311 coincide con los totales del Informe de Débitos de Sistework', async () => {
+    const presupuesto = await obtenerPresupuesto();
+    const partidas = presupuesto!.grupos.flatMap((g) => g.subgrupos.flatMap((s) => s.partidas));
+    const ejecucion = partidas.find((p) => p.objetoGasto === 311)?.ejecucion;
+    expect(ejecucion?.planFinanciero).toBe(972503140);
+    expect(ejecucion?.prevision).toBe(909383925);
+    expect(ejecucion?.compromiso).toBe(909383925);
+    expect(ejecucion?.saldoPlan).toBe(63119215);
+    expect(ejecucion?.aprobadoSinPlan).toBe(0);
+    expect(ejecucion?.debitos).toHaveLength(31);
+    const porTipo = (tipo: string) =>
+      ejecucion?.debitos.filter((d) => d.tipo === tipo).reduce((s, d) => s + d.compromiso, 0);
+    expect(porTipo('Convenio Marco')).toBe(414120000);
+    expect(porTipo('Declaración jurada')).toBe(382210000);
   });
 });
