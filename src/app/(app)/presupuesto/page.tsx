@@ -22,7 +22,7 @@ export default async function PresupuestoPage() {
     );
   }
 
-  const { anio, grupos, total } = presupuesto;
+  const { anio, grupos, total, reprogramaciones } = presupuesto;
   const conEjecucion = grupos
     .flatMap((g) => g.subgrupos.flatMap((s) => s.partidas))
     .filter((p) => p.ejecucion);
@@ -131,6 +131,34 @@ export default async function PresupuestoPage() {
             </section>
           );
         })}
+
+        <section className="rounded-lg border border-gray-200 bg-white p-4">
+          <h2 className="font-semibold text-gray-900">Reprogramaciones {anio}</h2>
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs text-gray-500">
+                <tr>
+                  <th className="py-1 pr-2 font-medium">De</th>
+                  <th className="px-2 py-1 font-medium">A</th>
+                  <th className="px-2 py-1 font-medium">F.F.</th>
+                  <th className="py-1 pl-2 text-right font-medium">Monto</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-700">
+                {reprogramaciones.map((r) => (
+                  <tr key={r.id} className="border-t border-gray-200">
+                    <td className="py-1 pr-2">{r.objetoOrigen}</td>
+                    <td className="px-2 py-1">{r.objetoDestino}</td>
+                    <td className="px-2 py-1">{r.fuente}</td>
+                    <td className="py-1 pl-2 text-right whitespace-nowrap">
+                      {formatearMonto(r.monto)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         {grupos.map((grupo) => (
           <section key={grupo.codigo} className="rounded-lg border border-gray-200 bg-white p-4">

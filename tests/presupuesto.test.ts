@@ -92,6 +92,24 @@ describe('Presupuesto aprobado', () => {
     expect(p342?.diferenciaConAprobado).toBe(-2150915);
   });
 
+  it('las reprogramaciones explican la diferencia entre plan y aprobado de cada rubro', async () => {
+    const presupuesto = await obtenerPresupuesto();
+    const partidas = presupuesto!.grupos.flatMap((g) => g.subgrupos.flatMap((s) => s.partidas));
+    expect(presupuesto!.reprogramaciones).toHaveLength(4);
+    for (const p of partidas) {
+      const neto = presupuesto!.reprogramaciones
+        .filter((r) => r.fuente === p.fuente)
+        .reduce(
+          (suma, r) =>
+            suma +
+            (r.objetoDestino === p.objetoGasto ? r.monto : 0) -
+            (r.objetoOrigen === p.objetoGasto ? r.monto : 0),
+          0,
+        );
+      expect(neto).toBe(p.ejecucion?.diferenciaConAprobado);
+    }
+  });
+
   it('el rubro 311 coincide con los totales del Informe de Débitos de Sistework', async () => {
     const presupuesto = await obtenerPresupuesto();
     const partidas = presupuesto!.grupos.flatMap((g) => g.subgrupos.flatMap((s) => s.partidas));

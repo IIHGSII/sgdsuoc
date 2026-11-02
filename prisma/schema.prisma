@@ -291,6 +291,17 @@ model PartidaPresupuesto {
   @@map("partidas_presupuesto")
 }
 
+model ReprogramacionPresupuesto {
+  id            Int     @id @default(autoincrement())
+  anio          Int
+  fuente        Int
+  objetoOrigen  Int     @map("objeto_origen")
+  objetoDestino Int     @map("objeto_destino")
+  monto         Decimal @db.Decimal(15, 2)
+
+  @@map("reprogramaciones_presupuesto")
+}
+
 model DebitoPresupuesto {
   id                 Int                @id @default(autoincrement())
   partidaId          Int                @map("partida_id")

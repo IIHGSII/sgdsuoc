@@ -135,5 +135,20 @@ export async function obtenerPresupuesto() {
           : undefined,
     })),
   );
-  return { anio, grupos, total: grupos.reduce((suma, g) => suma + g.aprobado, 0) };
+  const reprogramaciones = await prisma.reprogramacionPresupuesto.findMany({
+    where: { anio },
+    orderBy: { id: 'asc' },
+  });
+  return {
+    anio,
+    grupos,
+    total: grupos.reduce((suma, g) => suma + g.aprobado, 0),
+    reprogramaciones: reprogramaciones.map((r) => ({
+      id: r.id,
+      fuente: r.fuente,
+      objetoOrigen: r.objetoOrigen,
+      objetoDestino: r.objetoDestino,
+      monto: Number(r.monto),
+    })),
+  };
 }
