@@ -30,7 +30,7 @@ export type Ejecucion = {
   prevision: number;
   compromiso: number;
   saldoPlan: number;
-  aprobadoSinPlan: number;
+  diferenciaConAprobado: number;
   debitos: Debito[];
 };
 
@@ -56,7 +56,7 @@ export function calcularEjecucion(
     prevision,
     compromiso,
     saldoPlan: planFinanciero - prevision,
-    aprobadoSinPlan: aprobado - planFinanciero,
+    diferenciaConAprobado: planFinanciero - aprobado,
     debitos,
   };
 }
@@ -66,7 +66,9 @@ export type Grupo = { codigo: number; nombre: string; aprobado: number; subgrupo
 
 export function agruparPartidas(partidas: Partida[]): Grupo[] {
   const grupos: Grupo[] = [];
-  const ordenadas = [...partidas].sort((a, b) => a.objetoGasto - b.objetoGasto);
+  const ordenadas = [...partidas].sort(
+    (a, b) => a.objetoGasto - b.objetoGasto || a.fuente - b.fuente,
+  );
   for (const partida of ordenadas) {
     const codigoGrupo = Math.floor(partida.objetoGasto / 100) * 100;
     const codigoSubgrupo = Math.floor(partida.objetoGasto / 10) * 10;

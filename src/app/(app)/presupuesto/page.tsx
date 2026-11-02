@@ -62,10 +62,13 @@ export default async function PresupuestoPage() {
             { titulo: 'Plan financiero', monto: e.planFinanciero },
             { titulo: 'Comprometido', monto: e.compromiso },
             { titulo: 'Saldo del plan', monto: e.saldoPlan },
-            { titulo: 'Aprobado sin plan financiero', monto: e.aprobadoSinPlan },
+            { titulo: 'Plan financiero menos aprobado', monto: e.diferenciaConAprobado },
           ];
           return (
-            <section key={p.objetoGasto} className="rounded-lg border border-gray-200 bg-white p-4">
+            <section
+              key={`${p.objetoGasto}-${p.fuente}`}
+              className="rounded-lg border border-gray-200 bg-white p-4"
+            >
               <h2 className="font-semibold text-gray-900">
                 {p.objetoGasto} · {p.descripcion}
               </h2>
@@ -172,7 +175,7 @@ export default async function PresupuestoPage() {
                       </td>
                     </tr>
                     {subgrupo.partidas.map((p) => (
-                      <tr key={p.objetoGasto} className="text-gray-700">
+                      <tr key={`${p.objetoGasto}-${p.fuente}`} className="text-gray-700">
                         <td className="py-1 pr-2 pl-3">
                           {p.objetoGasto} · {p.descripcion}
                         </td>

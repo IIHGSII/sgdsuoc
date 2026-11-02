@@ -31,9 +31,65 @@ describe('Presupuesto aprobado', () => {
     expect(ejecucion?.prevision).toBe(884236454);
     expect(ejecucion?.compromiso).toBe(884236454);
     expect(ejecucion?.saldoPlan).toBe(0);
-    expect(ejecucion?.aprobadoSinPlan).toBe(263312062);
+    expect(ejecucion?.diferenciaConAprobado).toBe(-263312062);
     expect(ejecucion?.debitos).toHaveLength(4);
-    expect(partidas.find((p) => p.objetoGasto === 321)?.ejecucion).toBeUndefined();
+  });
+
+  it('el rubro 321 coincide con los totales del Informe de Débitos de Sistework', async () => {
+    const presupuesto = await obtenerPresupuesto();
+    const partidas = presupuesto!.grupos.flatMap((g) => g.subgrupos.flatMap((s) => s.partidas));
+    const ejecucion = partidas.find((p) => p.objetoGasto === 321)?.ejecucion;
+    expect(ejecucion?.planFinanciero).toBe(58400000);
+    expect(ejecucion?.compromiso).toBe(58400000);
+    expect(ejecucion?.saldoPlan).toBe(0);
+    expect(ejecucion?.diferenciaConAprobado).toBe(-100000000);
+    expect(ejecucion?.debitos).toHaveLength(1);
+  });
+
+  it('el rubro 331 coincide con los totales del Informe de Débitos de Sistework', async () => {
+    const presupuesto = await obtenerPresupuesto();
+    const partidas = presupuesto!.grupos.flatMap((g) => g.subgrupos.flatMap((s) => s.partidas));
+    const ejecucion = partidas.find((p) => p.objetoGasto === 331)?.ejecucion;
+    expect(ejecucion?.planFinanciero).toBe(206637826);
+    expect(ejecucion?.compromiso).toBe(150755571);
+    expect(ejecucion?.saldoPlan).toBe(55882255);
+    expect(ejecucion?.diferenciaConAprobado).toBe(200000000);
+    expect(ejecucion?.debitos).toHaveLength(8);
+  });
+
+  it('el rubro 341 coincide por fuente con los totales del Informe de Débitos de Sistework', async () => {
+    const presupuesto = await obtenerPresupuesto();
+    const partidas = presupuesto!.grupos.flatMap((g) => g.subgrupos.flatMap((s) => s.partidas));
+    const ff10 = partidas.find((p) => p.objetoGasto === 341 && p.fuente === 10);
+    expect(ff10?.aprobado).toBe(0);
+    expect(ff10?.ejecucion?.planFinanciero).toBe(65462977);
+    expect(ff10?.ejecucion?.compromiso).toBe(2883500);
+    expect(ff10?.ejecucion?.saldoPlan).toBe(62579477);
+    expect(ff10?.ejecucion?.diferenciaConAprobado).toBe(65462977);
+    expect(ff10?.ejecucion?.debitos).toHaveLength(1);
+
+    const ff30 = partidas.find((p) => p.objetoGasto === 341 && p.fuente === 30);
+    expect(ff30?.ejecucion?.planFinanciero).toBe(228700000);
+    expect(ff30?.ejecucion?.compromiso).toBe(222685000);
+    expect(ff30?.ejecucion?.saldoPlan).toBe(6015000);
+    expect(ff30?.ejecucion?.diferenciaConAprobado).toBe(100000000);
+    expect(ff30?.ejecucion?.debitos).toHaveLength(23);
+  });
+
+  it('las reprogramaciones se compensan y los totales coinciden con los seis informes', async () => {
+    const presupuesto = await obtenerPresupuesto();
+    const partidas = presupuesto!.grupos.flatMap((g) => g.subgrupos.flatMap((s) => s.partidas));
+    expect(partidas).toHaveLength(7);
+    const sumar = (f: (e: NonNullable<(typeof partidas)[number]['ejecucion']>) => number) =>
+      partidas.reduce((suma, p) => suma + f(p.ejecucion!), 0);
+    expect(sumar((e) => e.planFinanciero)).toBe(2475198397);
+    expect(sumar((e) => e.compromiso)).toBe(2287602450);
+    expect(sumar((e) => e.saldoPlan)).toBe(187595947);
+    expect(sumar((e) => e.diferenciaConAprobado)).toBe(0);
+    const p342 = partidas.find((p) => p.objetoGasto === 342)?.ejecucion;
+    expect(p342?.planFinanciero).toBe(59258000);
+    expect(p342?.saldoPlan).toBe(0);
+    expect(p342?.diferenciaConAprobado).toBe(-2150915);
   });
 
   it('el rubro 311 coincide con los totales del Informe de Débitos de Sistework', async () => {
@@ -44,7 +100,7 @@ describe('Presupuesto aprobado', () => {
     expect(ejecucion?.prevision).toBe(909383925);
     expect(ejecucion?.compromiso).toBe(909383925);
     expect(ejecucion?.saldoPlan).toBe(63119215);
-    expect(ejecucion?.aprobadoSinPlan).toBe(0);
+    expect(ejecucion?.diferenciaConAprobado).toBe(0);
     expect(ejecucion?.debitos).toHaveLength(31);
     const porTipo = (tipo: string) =>
       ejecucion?.debitos.filter((d) => d.tipo === tipo).reduce((s, d) => s + d.compromiso, 0);
